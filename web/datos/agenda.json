@@ -156,6 +156,14 @@
    "lat": -8.40023,
    "lon": -74.55883,
    "fuente": "OpenStreetMap (Villa Deportiva Regional Ucayali)"
+  },
+  "colegio_santo_toribio": {
+   "nombre": "Colegio Santo Toribio de Mogrovejo",
+   "ciudad": "chiclayo",
+   "pais": "CHICLAYO",
+   "lat": -6.75734,
+   "lon": -79.86201,
+   "fuente": "Micole: Av. Augusto B. Leguía 2598, José Leonardo Ortiz"
   }
  },
  "duracion_min": {
@@ -271,7 +279,7 @@
     {
      "hora": "7:00 p. m.",
      "texto": "Cena con los sacerdotes de la Diócesis de Chiclayo en el Colegio Santo Toribio de Mogrovejo",
-     "ciudad": "CHICLAYO"
+     "lugar": "colegio_santo_toribio"
     }
    ]
   },

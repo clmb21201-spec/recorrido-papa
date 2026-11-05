@@ -18,6 +18,8 @@ const CAR_BIN = INL ? Uint8Array.from(atob(INL.car), c => c.charCodeAt(0)).buffe
   : await fetch("modelos/papamovil.b64.txt").then(r => r.text()).then(t => Uint8Array.from(atob(t.trim()), c => c.charCodeAt(0)).buffer);
 const PLANE_BIN = INL ? Uint8Array.from(atob(INL.avion), c => c.charCodeAt(0)).buffer
   : await fetch("modelos/avion.b64.txt").then(r => r.text()).then(t => Uint8Array.from(atob(t.trim()), c => c.charCodeAt(0)).buffer);
+const HELI_BIN = INL ? Uint8Array.from(atob(INL.heli), c => c.charCodeAt(0)).buffer
+  : await fetch("modelos/helicoptero.b64.txt").then(r => r.text()).then(t => Uint8Array.from(atob(t.trim()), c => c.charCodeAt(0)).buffer);
 const PAPA_BIN = INL ? Uint8Array.from(atob(INL.papa), c => c.charCodeAt(0)).buffer
   : await fetch("modelos/papa.b64.txt").then(r => r.text()).then(t => Uint8Array.from(atob(t.trim()), c => c.charCodeAt(0)).buffer);
 const MW = 1160, MH = 1080;
@@ -28,12 +30,12 @@ const $ = id => document.getElementById(id);
 const STEPS = [{ kind: "ov" }];
 DIAS.forEach((d, di) => d.items.forEach((it, ii) => {
   if (it.tramo) STEPS.push({ kind: "leg", di, ii, leg: it.tramo, to: it.a, fin: it.fin || null });
-  else if (it.vuelo) STEPS.push({ kind: "air", di, ii, from: it.de, to: it.a, min: it.min || 60 });
+  else if (it.vuelo) STEPS.push({ kind: "air", di, ii, from: it.de, to: it.a, min: it.min || 60, heli: it.vehiculo === "helicoptero" });
   else STEPS.push({ kind: "ev", di, ii, at: it.lugar || null, city: paisDe(it), c3: it.lugar && LUGARES[it.lugar] ? LUGARES[it.lugar].ciudad : null });
 }));
 const LAST = STEPS.length - 1;
 STEPS.forEach(s => { if (s.kind === "leg") s.c3 = "lima"; s.mode = s.kind === "leg" || (s.kind === "ev" && s.c3 && CITIES[s.c3]) ? "street" : "country"; });
-const cityOf = s => s.kind === "ov" ? null : s.kind === "leg" ? "LIMA" : s.kind === "air" ? (arrived() && s.to !== "ROMA" ? s.to : null) : s.city;
+const cityOf = s => s.kind === "ov" ? null : s.kind === "leg" ? "LIMA" : s.kind === "air" ? (arrived() && !INTL.has(s.to) ? s.to : null) : s.city;
 const moving = s => s.kind === "leg" || s.kind === "air";
 
 /* ======================= estado y tiempo ======================= */
@@ -66,7 +68,8 @@ const svg = $("country"), g = $("cg"), ov = $("cov");
 MAPPE.neighbors.forEach(n => add(g, "path", { d: n.d, class: "nb" }));
 const deptEl = {}; MAPPE.depts.forEach(n => deptEl[n.name] = add(g, "path", { d: n.d, class: "dp" }));
 add(g, "path", { d: MAPPE.peru, class: "pe" });
-const CP = MAPPE.places; CP.ROMA = [720, 500];   // punto de entrada/salida de los vuelos de Roma, fuera del encuadre de Lima
+const CP = MAPPE.places; CP.ROMA = [720, 500]; CP["BUENOS AIRES"] = [700, 900];   // entradas/salidas internacionales, fuera del encuadre de Lima
+const INTL = new Set(["ROMA", "BUENOS AIRES"]);
 const DEPT = { LIMA: ["LIMA", "CALLAO"], CHICLAYO: ["LAMBAYEQUE"], PIMENTEL: ["LAMBAYEQUE"], "ZAÑA": ["LAMBAYEQUE"], "SANTA CRUZ": ["CAJAMARCA"], CUSCO: ["CUSCO"], PUCALLPA: ["UCAYALI"] };
 const TOUR = new Set(Object.values(DEPT).flat());
 const LBL = { LIMA: [16, 6, "start", 0], CHICLAYO: [-4, -16, "end", 0], PIMENTEL: [-14, 14, "end", 2.2], "ZAÑA": [0, 30, "middle", 2.2], "SANTA CRUZ": [14, 6, "start", 1.6], CUSCO: [16, 6, "start", 0], PUCALLPA: [16, 6, "start", 0] };
@@ -92,7 +95,7 @@ function frameFor(pts, minExt) {
 }
 const C_OV = { cx: MW / 2, cy: MH / 2, z: 1 };
 const DAYCAM = DIAS.map(d => { const ps = [...new Set(d.items.filter(i => !i.tramo && !i.vuelo).map(paisDe))]; return frameFor(ps, ps.length > 1 ? 300 : 340); });
-function airCam(s) { return CP[s.from][1] > -100 && CP[s.to][1] > -100 && s.from !== "ROMA" && s.to !== "ROMA" ? frameFor([s.from, s.to], 300) : DAYCAM[s.di]; }
+function airCam(s) { return !INTL.has(s.from) && !INTL.has(s.to) ? frameFor([s.from, s.to], 300) : DAYCAM[s.di]; }
 let ccam = { ...C_OV }, cfrom = ccam, cto = ccam, ct0 = 0, cdur = 1;
 const easeIO = u => u < .5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
 function cMove(t, ms) { cfrom = { ...ccam }; cto = t; ct0 = performance.now(); cdur = ms; cfrom.dip = Math.min(1.1, Math.hypot(t.cx - cfrom.cx, t.cy - cfrom.cy) / 260); }
@@ -128,7 +131,7 @@ function countryEnter(prevStep, instant) {
 function deptPaint() {
   const s = STEPS[st.step];
   let on = cityOf(s), soft = null;
-  if (s.kind === "air" && s.to !== "ROMA" && DEPT[s.to]) { if (arrived() || legFrac() > .72) on = s.to; else soft = s.to; }
+  if (s.kind === "air" && !INTL.has(s.to) && DEPT[s.to]) { if (arrived() || legFrac() > .72) on = s.to; else soft = s.to; }
   for (const k in deptEl) {
     const a = !!on && DEPT[on] && DEPT[on].includes(k), b = !a && ((soft && DEPT[soft].includes(k)) || (TOUR.has(k) && s.kind === "ov"));
     if (deptEl[k].classList.contains("on") !== a) deptEl[k].classList.toggle("on", a);
@@ -143,7 +146,7 @@ function countryDraw(now) {
   const toD = pts => pts.length > 1 ? "M" + pts.map(p => p[0].toFixed(1) + " " + p[1].toFixed(1)).join("L") : "";
   let plane = null;
   cLegs.forEach((l, i) => {
-    const roma = l.a === "ROMA" || l.b === "ROMA";
+    const roma = INTL.has(l.a) || INTL.has(l.b);
     let k = s.kind === "ov" ? (roma ? 0 : 1) : l.step < st.step ? 1 : l.step === st.step ? (l.air ? legFrac() : 1) : 0;
     if (i === cLegAnim.i) k = easeIO(Math.max(0, Math.min(1, (now - cLegAnim.t0) / cLegAnim.dur)));
     const pts = k > 0 ? arc(l.a, l.b, k).map(p => CS(p[0], p[1])) : [];
@@ -151,7 +154,7 @@ function countryDraw(now) {
     cLegEl[i].setAttribute("stroke-dasharray", roma ? "2 10" : "none");
     const cur = l.air && l.step === st.step;
     cPlanEl[i].setAttribute("d", cur ? toD(arc(l.a, l.b, 1).map(p => CS(p[0], p[1]))) : "");
-    if (cur) { const q = arcAt(l.a, l.b, k), [x, y] = CS(q.x, q.y); plane = { x, y, ang: q.ang, k }; }
+    if (cur) { const q = arcAt(l.a, l.b, k), [x, y] = CS(q.x, q.y); plane = { x, y, ang: q.ang, k, heli: s.heli }; }
   });
   planeDraw(plane);
   const seen = new Set(); STEPS.slice(1, st.step + 1).forEach(x => seen.add(cityOf(x)));
@@ -189,18 +192,27 @@ pScene.add(new THREE.HemisphereLight(0xffffff, 0x6f747e, 1.25));
 const pSun = new THREE.DirectionalLight(0xffffff, 1.35); pSun.position.set(-300, 1000, -500); pScene.add(pSun);
 const planeG = new THREE.Group(), planeYaw = new THREE.Group(), planeTilt = new THREE.Group(), shadowG = new THREE.Group();
 planeTilt.add(planeYaw); planeG.add(planeTilt); pScene.add(shadowG, planeG); planeG.visible = shadowG.visible = false;
-const PLANE_PX = 112, NOSE = Math.atan2(0.3426, -0.9395);   // dirección de la nariz en el modelo (plano XZ)
-new GLTFLoader().parse(PLANE_BIN, "", gl => {
-  const m = gl.scene, box = new THREE.Box3().setFromObject(m), c = box.getCenter(new THREE.Vector3());
-  m.position.sub(c); const k = PLANE_PX / 1.03; const wrap = new THREE.Group(); wrap.add(m); wrap.scale.setScalar(k); planeYaw.add(wrap);
-  const sh = wrap.clone(true); sh.traverse(o => { if (o.isMesh) o.material = new THREE.MeshBasicMaterial({ color: 0x1d1b18, transparent: true, opacity: .16, depthWrite: false }); });
-  sh.scale.y = .01 * k; shadowG.add(sh); shadowG.userData.mesh = sh;
-}, () => {});
+const PLANE_PX = 112, HELI_PX = 84;
+// dirección de la nariz de cada modelo en su plano XZ: avión hacia -X algo +Z; helicóptero hacia -X
+const NOSES = { avion: Math.atan2(0.3426, -0.9395), heli: Math.PI };
+const VEH = {};
+function loadVehicle(name, bin, px, len) {
+  new GLTFLoader().parse(bin, "", gl => {
+    const m = gl.scene, box = new THREE.Box3().setFromObject(m), c = box.getCenter(new THREE.Vector3());
+    m.position.sub(c); const k = px / len; const wrap = new THREE.Group(); wrap.add(m); wrap.scale.setScalar(k); planeYaw.add(wrap);
+    const sh = wrap.clone(true); sh.traverse(o => { if (o.isMesh) o.material = new THREE.MeshBasicMaterial({ color: 0x1d1b18, transparent: true, opacity: .16, depthWrite: false }); });
+    sh.scale.y = .01 * k; shadowG.add(sh); VEH[name] = { wrap, sh };
+  }, () => {});
+}
+loadVehicle("avion", PLANE_BIN, PLANE_PX, 1.03);
+loadVehicle("heli", HELI_BIN, HELI_PX, 1.0);
 function planeDraw(pl) {
   planeG.visible = shadowG.visible = !!pl;
   if (!pl) { pRenderer.clear(); return; }
   const alt = Math.min(1, pl.k / .12, (1 - pl.k) / .12);   // sube al despegar y baja al aterrizar
-  const yaw = NOSE - pl.ang, sc = .8 + .35 * alt;
+  const kind = pl.heli ? "heli" : "avion";
+  for (const n in VEH) { VEH[n].wrap.visible = VEH[n].sh.visible = n === kind; }
+  const yaw = NOSES[kind] - pl.ang, sc = .8 + (pl.heli ? .2 : .35) * alt;
   planeG.position.set(pl.x, 300, pl.y); planeYaw.rotation.y = yaw; planeTilt.rotation.x = -.42 * (.4 + .6 * alt); planeG.scale.setScalar(sc);
   shadowG.position.set(pl.x + 34 * alt, 10, pl.y + 34 * alt); shadowG.rotation.y = yaw; shadowG.scale.setScalar(sc * .95);
   pRenderer.render(pScene, pCam);
@@ -479,14 +491,14 @@ function viasDe(k) { const seen = []; ROUTE[k].names.forEach(([n, a, b]) => { if
 const LL = { LIMA: [-12.022, -77.114], CHICLAYO: [-6.787, -79.828], "SANTA CRUZ": [-6.626, -78.944], "ZAÑA": [-6.922, -79.585], CUSCO: [-13.536, -71.939], PUCALLPA: [-8.378, -74.574], PIMENTEL: [-6.837, -79.934] };
 function kmEntre(a, b) { if (!LL[a] || !LL[b]) return null; const r = Math.PI / 180, [la1, lo1] = LL[a], [la2, lo2] = LL[b];
   const h = Math.sin((la2 - la1) * r / 2) ** 2 + Math.cos(la1 * r) * Math.cos(la2 * r) * Math.sin((lo2 - lo1) * r / 2) ** 2; return 12742 * Math.asin(Math.sqrt(h)); }
-const nombreC = c => c === "ROMA" ? "Roma" : tc(c);
+const nombreC = c => c === "ROMA" ? "Roma" : c === "BUENOS AIRES" ? "Buenos Aires" : tc(c);
 function dayHTML(di) {
   const d = DIAS[di];
   return `<div class="dayhead"><div><div class="dname">${d.dia}</div><div class="dnum">${d.num}</div></div><div class="city">${esc(d.ciudad)}</div></div>
   <div class="evs">${d.items.map((it, i) => it.tramo
     ? `<div class="ev leg" data-i="${i}"><span class="nowtag">EN CAMINO</span><div class="lt">${esc(it.titulo || "Traslado a " + LUGARES[it.a].nombre)}</div><div class="lv">${viasDe(it.tramo).map(esc).join(" · ")}</div><div class="lp"><div class="bar"><i></i></div><div class="lx"></div></div></div>`
     : it.vuelo
-    ? `<div class="ev leg air" data-i="${i}"><span class="nowtag">EN VUELO</span><div class="lt">${it.de === "ROMA" ? "Llegada desde Roma" : "Vuelo a " + esc(nombreC(it.a))}</div><div class="lv">${esc(nombreC(it.de))} → ${esc(nombreC(it.a))}${kmEntre(it.de, it.a) ? " · " + Math.round(kmEntre(it.de, it.a) / 10) * 10 + " km aprox." : ""}</div><div class="lp"><div class="bar"><i></i></div><div class="lx"></div></div></div>`
+    ? `<div class="ev leg air" data-i="${i}"><span class="nowtag">EN VUELO</span><div class="lt">${it.hora ? "<b>" + it.hora + "</b> " : ""}${INTL.has(it.de) ? "Llegada desde " + esc(nombreC(it.de)) : (it.vehiculo === "helicoptero" ? "Helicóptero a " : "Vuelo a ") + esc(nombreC(it.a))}</div><div class="lv">${esc(nombreC(it.de))} → ${esc(nombreC(it.a))}${kmEntre(it.de, it.a) ? " · " + Math.round(kmEntre(it.de, it.a) / 10) * 10 + " km aprox." : ""}${it.min && !INTL.has(it.de) && !INTL.has(it.a) ? " · " + (it.min >= 60 ? Math.floor(it.min / 60) + " h " + String(it.min % 60).padStart(2, "0") : it.min + " min") : ""}</div><div class="lp"><div class="bar"><i></i></div><div class="lx"></div></div></div>`
     : `<div class="ev" data-i="${i}"><span class="nowtag">AHORA</span><b>${it.hora}</b> ${esc(it.texto)}</div>`).join("")}</div>`;
 }
 function ovHTML() {
@@ -516,7 +528,7 @@ function panelTick(S) {
     const el = body.querySelector(`.ev.leg[data-i="${s.ii}"]`); if (!el) return;
     const f = legFrac(), D = kmEntre(s.from, s.to), r = rate(), remain = r > 0 ? (legMs() - progMs()) / r : null;
     el.querySelector(".bar i").style.width = (f * 100).toFixed(1) + "%";
-    el.querySelector(".lx").innerHTML = arrived() ? `Aterrizó${s.to !== "ROMA" ? " en " + esc(nombreC(s.to)) : ""}` : (D ? `${Math.round(f * D)} de ${Math.round(D)} km · ` : "") + (remain != null && remain > 0 ? `aterrizaje aprox. ${hhmm(new Date(now + remain))}` : st.paused ? "en pausa" : "");
+    el.querySelector(".lx").innerHTML = arrived() ? `Aterrizó${!INTL.has(s.to) ? " en " + esc(nombreC(s.to)) : ""}` : (D ? `${Math.round(f * D)} de ${Math.round(D)} km · ` : "") + (remain != null && remain > 0 ? `aterrizaje aprox. ${hhmm(new Date(now + remain))}` : st.paused ? "en pausa" : "");
     return;
   }
   if (s.kind !== "leg" || !S) return;
@@ -585,7 +597,7 @@ function frame(now) {
   if (mode === "country") countryDraw(now);
   const s = STEPS[st.step];
   if (moving(s) && progMs() >= legMs()) {   // llegó: pausa breve y luego pasa a la actividad siguiente
-    if (!arrZoom) { arrZoom = true; if (s.kind === "air" && s.to !== "ROMA") cMove(frameFor([s.to], 340), 1500); }
+    if (!arrZoom) { arrZoom = true; if (s.kind === "air" && !INTL.has(s.to)) cMove(frameFor([s.to], 340), 1500); }
     const r = rate(); if (r > 0 && (progMs() - legMs()) / r >= PAUSA_SEG * 1000 && STEPS[st.step + 1] && !moving(STEPS[st.step + 1])) go(st.step + 1, false, true);   // cada pantalla avanza sola, sin enviar
   }
   panelTick(S);

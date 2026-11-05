@@ -171,9 +171,9 @@
    "items": [
     {
      "vuelo": true,
-     "de": "ROMA",
+     "de": "BUENOS AIRES",
      "a": "LIMA",
-     "min": 3
+     "min": 330
     },
     {
      "hora": "5:30 p. m.",
@@ -224,7 +224,7 @@
      "lugar": "estadio"
     },
     {
-     "hora": "Noche",
+     "hora": "8:00 p. m.",
      "texto": "Cena con los obispos en la Nunciatura Apostólica",
      "lugar": "nunciatura"
     }
@@ -240,11 +240,12 @@
      "vuelo": true,
      "de": "LIMA",
      "a": "CHICLAYO",
-     "min": 80
+     "min": 90,
+     "hora": "7:40 a. m."
     },
     {
      "hora": "9:10 a. m.",
-     "texto": "Llegada a Chiclayo",
+     "texto": "Llegada a la Base Aérea de Chiclayo",
      "ciudad": "CHICLAYO"
     },
     {
@@ -266,6 +267,11 @@
      "hora": "5:45 p. m.",
      "texto": "Encuentro universitario en la USAT",
      "lugar": "usat"
+    },
+    {
+     "hora": "7:00 p. m.",
+     "texto": "Cena con los sacerdotes de la Diócesis de Chiclayo en el Colegio Santo Toribio de Mogrovejo",
+     "ciudad": "CHICLAYO"
     }
    ]
   },
@@ -284,7 +290,9 @@
      "vuelo": true,
      "de": "CHICLAYO",
      "a": "SANTA CRUZ",
-     "min": 35
+     "min": 40,
+     "hora": "9:10 a. m.",
+     "vehiculo": "helicoptero"
     },
     {
      "hora": "11:00 a. m.",
@@ -295,7 +303,9 @@
      "vuelo": true,
      "de": "SANTA CRUZ",
      "a": "CHICLAYO",
-     "min": 35
+     "min": 45,
+     "hora": "1:15 p. m.",
+     "vehiculo": "helicoptero"
     },
     {
      "hora": "5:30 p. m.",
@@ -314,7 +324,8 @@
      "vuelo": true,
      "de": "CHICLAYO",
      "a": "CUSCO",
-     "min": 110
+     "min": 130,
+     "hora": "7:50 a. m."
     },
     {
      "hora": "10:30 a. m.",
@@ -330,7 +341,8 @@
      "vuelo": true,
      "de": "CUSCO",
      "a": "PUCALLPA",
-     "min": 65
+     "min": 85,
+     "hora": "1:05 p. m."
     },
     {
      "hora": "3:00 p. m.",
@@ -346,7 +358,8 @@
      "vuelo": true,
      "de": "PUCALLPA",
      "a": "LIMA",
-     "min": 70
+     "min": 75,
+     "hora": "7:05 p. m."
     }
    ]
   },
@@ -391,7 +404,8 @@
      "vuelo": true,
      "de": "LIMA",
      "a": "ROMA",
-     "min": 3
+     "min": 3,
+     "hora": "1:45 p. m."
     }
    ]
   }

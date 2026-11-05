@@ -1,0 +1,9 @@
+{
+  // Cloudflare Workers: página estática (web/) + sincronización en vivo (/sync)
+  "name": "recorrido-papa",
+  "main": "worker/index.js",
+  "compatibility_date": "2025-09-01",
+  "assets": { "directory": "./web", "binding": "ASSETS" },
+  "durable_objects": { "bindings": [{ "name": "SALA", "class_name": "Sala" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Sala"] }]
+}

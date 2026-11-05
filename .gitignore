@@ -1,0 +1,7 @@
+node_modules/
+herramientas/node_modules
+herramientas/fuente/*.pbf
+herramientas/fuente/*.osm
+herramientas/fuente/vistas/
+.wrangler/
+dist/recorrido_papa_offline.html

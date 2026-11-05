@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Recorrido del Papa en vivo</title>
+<style>
+/*__FONTS__*/
+:root{--gold:#A3863E;--gold-soft:#E4D8B8;--ink:#1D1B18;--text:#24221F;--mute:#8C877D;--paper:#FFFFFF;--land:#DCDBD7;--land2:#EEEDEA;
+  --serif:"Playfair Display",Georgia,serif;--sans:"Inter",Arial,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--paper)}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;background:var(--paper);overflow:hidden}
+#street,#countrywrap{position:absolute;left:0;top:0;width:1160px;height:1080px;transition:opacity .9s ease}
+#countrywrap{background:var(--paper)}
+#country,#cov{position:absolute;left:0;top:0;width:1160px;height:1080px}
+#country .nb{fill:var(--land2);stroke:#fff;stroke-width:1.2;vector-effect:non-scaling-stroke}
+#country .dp{fill:var(--land);stroke:#fff;stroke-width:1.1;vector-effect:non-scaling-stroke;transition:fill .9s}
+#country .dp.tour{fill:var(--gold-soft)}
+#country .dp.on{fill:var(--gold)}
+#country .pe{fill:none;stroke:#A9A59B;stroke-width:1.4;vector-effect:non-scaling-stroke}
+#cov text{font-family:var(--serif);font-weight:700;letter-spacing:.08em}
+#cov .cty{fill:#B3AFA6;font-size:15px;font-family:var(--sans);font-weight:600;letter-spacing:.32em}
+#cov .lbl{fill:var(--ink);paint-order:stroke;stroke:#fff;stroke-width:6px;stroke-linejoin:round}
+#cov .lbl.cur{fill:#fff;stroke:none}
+#cov .tag{font-family:var(--sans);font-weight:700;fill:var(--gold);letter-spacing:.04em}
+#panel{position:absolute;left:1160px;top:0;width:760px;height:1080px;padding:70px 72px 0 64px;border-left:1px solid #E7E3DA;background:var(--paper)}
+.kick{font:600 15px/1 var(--sans);letter-spacing:.24em;color:var(--mute);text-transform:uppercase}
+#clock{position:absolute;right:72px;top:70px;font:600 15px/1 var(--sans);letter-spacing:.12em;color:var(--gold)}
+.rule{height:2px;width:72px;background:var(--gold);margin:22px 0 0}
+#body{position:absolute;left:64px;right:72px;top:150px;bottom:150px;transition:opacity .35s ease,transform .35s ease}
+#body.out{opacity:0;transform:translateY(-14px)}
+#body.pre{opacity:0;transform:translateY(18px);transition:none}
+.dayhead{display:flex;align-items:flex-start;gap:42px}
+.dname{font:700 30px/1 var(--serif);letter-spacing:.06em;color:var(--gold)}
+.dnum{font:900 156px/0.92 var(--serif);color:var(--gold);margin-top:6px}
+.dense .dnum{font-size:104px}
+.dense .dname{font-size:26px}
+.dense .city{font-size:32px;padding:16px 28px 14px}
+.dense .ev.leg:not(.now) .lv{display:none}
+.dense .ev.leg{font-size:19px}
+.xdense .dnum{font-size:88px}
+.xdense .evs{margin-top:22px}
+.xdense .ev{font-size:20px;margin-bottom:10px}
+.xdense .ev.leg{font-size:17px}
+.xdense .ev.leg .lv{font-size:15px}
+.city{display:inline-block;background:var(--ink);color:#fff;font:700 38px/1 var(--serif);letter-spacing:.04em;padding:20px 34px 18px;margin-top:4px;max-width:420px}
+.evs{position:relative;margin-top:46px;padding-left:46px}
+.dense .evs{margin-top:28px}
+.evs:before{content:"";position:absolute;left:9px;top:12px;bottom:12px;width:2px;background:var(--gold);opacity:.55}
+.ev{position:relative;font:400 27px/1.36 var(--sans);color:var(--text);margin-bottom:22px;transition:opacity .5s,color .5s}
+.dense .ev{font-size:22px;margin-bottom:13px}
+.ev b{font-weight:700}
+.ev:before{content:"";position:absolute;left:-46px;top:9px;width:16px;height:16px;border:3px solid var(--gold);border-radius:50%;background:#fff;transition:background .4s,transform .4s}
+.ev.past{opacity:.36}
+.ev.past:before{background:var(--gold)}
+.ev.now{color:var(--ink)}
+.ev.now:before{background:var(--gold);transform:scale(1.35);box-shadow:0 0 0 7px rgba(163,134,62,.18)}
+.ev.now .nowtag{display:block}
+.nowtag{display:none;font:700 14px/1 var(--sans);letter-spacing:.22em;color:var(--gold);margin-bottom:8px}
+.ev.next{opacity:.9}
+.ev.leg{font-size:21px;color:var(--mute)}
+.ev.leg:before{width:10px;height:10px;left:-43px;top:10px;border-width:2px;border-radius:0;transform:rotate(45deg)}
+.ev.leg.now:before{transform:rotate(45deg) scale(1.4)}
+.ev.leg .lt{font-weight:600;color:inherit}
+.ev.leg .lv{font-size:17px;letter-spacing:.02em;margin-top:2px}
+.ev.leg .lp{display:none;margin-top:12px}
+.ev.leg.now{color:var(--ink)}
+.ev.leg.now .lp{display:block}
+.bar{height:6px;background:#EEE9DD;position:relative}
+.bar i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--gold)}
+.lx{font:600 17px/1.5 var(--sans);color:var(--gold);margin-top:10px}
+.lx .cal{color:var(--ink);font-weight:600}
+.ovt{font:900 64px/1.05 var(--serif);color:var(--ink);margin-top:6px}
+.ovsub{font:400 24px/1.4 var(--sans);color:var(--mute);margin-top:18px}
+.ovl{margin-top:44px}
+.ovr{display:flex;align-items:baseline;gap:26px;padding:15px 0;border-bottom:1px solid #EEEAE1}
+.ovr .n{font:900 48px/1 var(--serif);color:var(--gold);width:72px}
+.ovr .d{font:700 16px/1 var(--sans);letter-spacing:.2em;color:var(--mute);width:140px}
+.ovr .c{font:700 26px/1.2 var(--serif);color:var(--ink);letter-spacing:.03em}
+#strip{position:absolute;left:64px;right:72px;bottom:58px;display:flex;justify-content:space-between;border-top:1px solid #E7E3DA;padding-top:20px}
+.sd{text-align:center;width:16%;color:#B9B4AA;transition:color .5s}
+.sd .a{font:700 13px/1 var(--sans);letter-spacing:.2em}
+.sd .b{font:900 32px/1.2 var(--serif)}
+.sd .u{height:3px;width:34px;margin:6px auto 0;background:transparent;transition:background .5s}
+.sd.done{color:#8C877D}
+.sd.cur{color:var(--gold)}
+.sd.cur .u{background:var(--gold)}
+#help{position:absolute;right:24px;top:24px;background:rgba(29,27,24,.94);color:#fff;font:400 18px/1.6 var(--sans);padding:22px 28px;display:none;z-index:5}
+#help b{color:var(--gold-soft)}
+#speed{position:absolute;right:72px;top:96px;font:600 13px/1 var(--sans);letter-spacing:.08em;color:var(--mute);opacity:0;transition:opacity .4s}
+#speed.on{opacity:1}
+#demo{position:absolute;left:24px;top:24px;background:#B3261E;color:#fff;font:700 14px/1 var(--sans);letter-spacing:.18em;padding:9px 12px;display:none;z-index:4}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="street" width="1160" height="1080"></canvas>
+  <div id="fade" style="position:absolute;left:0;top:0;width:1160px;height:1080px;background:#EEEBE5;opacity:0;pointer-events:none"></div>
+  <div id="countrywrap"><svg id="country" viewBox="0 0 1160 1080" preserveAspectRatio="xMidYMid slice"><g id="cg"></g></svg><svg id="cov" width="1160" height="1080"></svg><canvas id="planecv" width="1160" height="1080" style="position:absolute;left:0;top:0;width:1160px;height:1080px;pointer-events:none"></canvas></div>
+  <div id="demo">MODO PRUEBA ×30</div>
+  <div id="panel">
+    <div class="kick" id="kick"></div><div id="clock"></div><div id="speed"></div>
+    <div class="rule"></div>
+    <div id="body"></div>
+    <div id="strip"></div>
+  </div>
+  <div id="help">
+    <b>→ / Espacio / AvPág</b> siguiente (en una actividad: inicia el traslado o el vuelo; durante el trayecto: llega)<br>
+    <b>← / RePág</b> paso anterior<br>
+    <b>P</b> pausa o reanuda el traslado · <b>+ / −</b> velocidad (×0,5 a ×10; ahora <span id="hspeed">×1</span>) · <b>N</b> velocidad normal<br>
+    <b>1 – 6</b> primer paso de cada día · <b>0 / Inicio</b> vista general<br>
+    <b>D</b> modo prueba (tiempo ×30) · <b>F</b> o doble clic: pantalla completa · <b>H</b> esta ayuda
+  </div>
+</div>
+<!--__DATA__-->
+<script type="module" src="app.js"></script>
+</body>
+</html>

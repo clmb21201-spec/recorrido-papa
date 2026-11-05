@@ -1,0 +1,399 @@
+{
+ "titulo": "Visita del Papa al Perú",
+ "velocidad_base": 30,
+ "vuelo_seg": 5,
+ "pausa_llegada_seg": 3,
+ "nota": "velocidad_base: 30 = todo corre a ×30 (poner 1 para tiempo real). vuelo_seg: duración fija de cada vuelo en segundos (0 = usar los minutos de cada vuelo). Solo los recorridos confirmados (m1, m2) tienen desplazamiento. pausa_llegada_seg: segundos que se queda al llegar (aterrizaje o fin de recorrido) antes de pasar a la actividad siguiente.",
+ "lugares": {
+  "base_callao": {
+   "nombre": "Base Aérea del Callao",
+   "ciudad": "lima",
+   "pais": "LIMA",
+   "lat": -12.0219,
+   "lon": -77.1062
+  },
+  "palacio": {
+   "nombre": "Palacio de Gobierno",
+   "ciudad": "lima",
+   "pais": "LIMA",
+   "lat": -12.0449,
+   "lon": -77.0298
+  },
+  "teatro": {
+   "nombre": "Gran Teatro Nacional",
+   "ciudad": "lima",
+   "pais": "LIMA",
+   "lat": -12.087,
+   "lon": -77.0031
+  },
+  "plaza_mayor": {
+   "nombre": "Plaza Mayor de Lima",
+   "ciudad": "lima",
+   "pais": "LIMA",
+   "lat": -12.0459,
+   "lon": -77.0306
+  },
+  "estadio": {
+   "nombre": "Estadio Nacional",
+   "ciudad": "lima",
+   "pais": "LIMA",
+   "lat": -12.0677,
+   "lon": -77.0336
+  },
+  "asilo": {
+   "nombre": "Hermanitas de los Ancianos Desamparados",
+   "ciudad": "lima",
+   "pais": "LIMA",
+   "lat": -12.0562681,
+   "lon": -77.1429883
+  },
+  "las_palmas": {
+   "nombre": "Base Aérea Las Palmas",
+   "ciudad": "lima",
+   "pais": "LIMA",
+   "lat": -12.1577,
+   "lon": -77.0009
+  },
+  "lamarina_ini": {
+   "nombre": "Av. de La Marina",
+   "ciudad": "lima",
+   "pais": "LIMA",
+   "lat": -12.0736796,
+   "lon": -77.1003632,
+   "oculto": true
+  },
+  "nunciatura": {
+   "nombre": "Nunciatura Apostólica",
+   "ciudad": "lima",
+   "pais": "LIMA",
+   "lat": -12.071,
+   "lon": -77.0413
+  },
+  "catedral_chiclayo": {
+   "nombre": "Catedral de Santa María",
+   "ciudad": "chiclayo",
+   "pais": "CHICLAYO",
+   "lat": -6.77169,
+   "lon": -79.83761,
+   "fuente": "OpenStreetMap"
+  },
+  "capilla_romero": {
+   "nombre": "Capilla San Óscar Romero",
+   "ciudad": "chiclayo",
+   "pais": "CHICLAYO",
+   "lat": -6.8016,
+   "lon": -79.83625,
+   "fuente": "Google Maps del equipo y OpenStreetMap"
+  },
+  "santuario_paz": {
+   "nombre": "Santuario de Nuestra Señora de la Paz",
+   "ciudad": "chiclayo",
+   "pais": "CHICLAYO",
+   "lat": -6.790948,
+   "lon": -79.8691913,
+   "fuente": "Google Maps del equipo"
+  },
+  "usat": {
+   "nombre": "Universidad Católica Santo Toribio de Mogrovejo",
+   "ciudad": "chiclayo",
+   "pais": "CHICLAYO",
+   "lat": -6.76031,
+   "lon": -79.86338,
+   "fuente": "OpenStreetMap"
+  },
+  "pimentel_misa": {
+   "nombre": "Explanada de las Pampas de Pimentel",
+   "ciudad": "chiclayo",
+   "pais": "PIMENTEL",
+   "lat": -6.815,
+   "lon": -79.915,
+   "fuente": "aprox.: pampas junto a la carretera Chiclayo–Pimentel, cerca de la I.E. Elías Aguirre"
+  },
+  "santo_toribio_zana": {
+   "nombre": "Santuario de Santo Toribio de Mogrovejo",
+   "ciudad": "zana",
+   "pais": "ZAÑA",
+   "lat": -6.924132,
+   "lon": -79.5833627,
+   "fuente": "Google Maps del equipo (calle Santo Toribio)"
+  },
+  "santa_cruz_misa": {
+   "nombre": "Pampa de Aviación Papa León XIV",
+   "ciudad": "santa_cruz",
+   "pais": "SANTA CRUZ",
+   "lat": -6.63,
+   "lon": -78.9325,
+   "fuente": "aprox.: Av. Aviación (OpenStreetMap no marca la pampa)"
+  },
+  "saqsaywaman": {
+   "nombre": "Explanada de Saqsaywaman",
+   "ciudad": "cusco",
+   "pais": "CUSCO",
+   "lat": -13.5076,
+   "lon": -71.9826,
+   "fuente": "OpenStreetMap"
+  },
+  "plaza_cusco": {
+   "nombre": "Plaza Mayor del Cusco",
+   "ciudad": "cusco",
+   "pais": "CUSCO",
+   "lat": -13.5168,
+   "lon": -71.9788,
+   "fuente": "OpenStreetMap"
+  },
+  "yarinacocha": {
+   "nombre": "Bulevar de Yarinacocha (Puerto Callao)",
+   "ciudad": "pucallpa",
+   "pais": "PUCALLPA",
+   "lat": -8.3517,
+   "lon": -74.5768,
+   "fuente": "OpenStreetMap: Malecón Puerto Callao, a orillas de la laguna"
+  },
+  "videnita": {
+   "nombre": "Villa Deportiva Regional Ucayali",
+   "ciudad": "pucallpa",
+   "pais": "PUCALLPA",
+   "lat": -8.40023,
+   "lon": -74.55883,
+   "fuente": "OpenStreetMap (Villa Deportiva Regional Ucayali)"
+  }
+ },
+ "duracion_min": {
+  "m1": 25,
+  "m2": 10
+ },
+ "dias": [
+  {
+   "dia": "MIÉRCOLES",
+   "num": "11",
+   "ciudad": "LIMA",
+   "corto": "MIÉ",
+   "items": [
+    {
+     "vuelo": true,
+     "de": "ROMA",
+     "a": "LIMA",
+     "min": 3
+    },
+    {
+     "hora": "5:30 p. m.",
+     "texto": "Llegada a la Base Aérea del Callao",
+     "lugar": "base_callao"
+    },
+    {
+     "hora": "6:15 p. m.",
+     "texto": "Ceremonia de bienvenida en Palacio de Gobierno",
+     "lugar": "palacio"
+    },
+    {
+     "hora": "6:45 p. m.",
+     "texto": "Visita a la presidenta de la República",
+     "lugar": "palacio"
+    },
+    {
+     "hora": "7:45 p. m.",
+     "texto": "Encuentro con autoridades, sociedad civil y cuerpo diplomático en el Gran Teatro Nacional",
+     "lugar": "teatro"
+    }
+   ]
+  },
+  {
+   "dia": "JUEVES",
+   "num": "12",
+   "ciudad": "LIMA",
+   "corto": "JUE",
+   "items": [
+    {
+     "hora": "9:30 a. m.",
+     "texto": "Encuentro con los obispos del Perú",
+     "lugar": "plaza_mayor"
+    },
+    {
+     "hora": "10:20 a. m.",
+     "texto": "Celebración en la Catedral de Lima",
+     "lugar": "plaza_mayor"
+    },
+    {
+     "hora": "11:30 a. m.",
+     "texto": "Encuentro sobre los desafíos y las esperanzas para el futuro del pueblo peruano",
+     "lugar": "plaza_mayor"
+    },
+    {
+     "hora": "6:00 p. m.",
+     "texto": "Vigilia con jóvenes y universitarios en el Estadio Nacional",
+     "lugar": "estadio"
+    },
+    {
+     "hora": "Noche",
+     "texto": "Cena con los obispos en la Nunciatura Apostólica",
+     "lugar": "nunciatura"
+    }
+   ]
+  },
+  {
+   "dia": "VIERNES",
+   "num": "13",
+   "ciudad": "CHICLAYO Y PIMENTEL",
+   "corto": "VIE",
+   "items": [
+    {
+     "vuelo": true,
+     "de": "LIMA",
+     "a": "CHICLAYO",
+     "min": 80
+    },
+    {
+     "hora": "9:10 a. m.",
+     "texto": "Llegada a Chiclayo",
+     "ciudad": "CHICLAYO"
+    },
+    {
+     "hora": "10:30 a. m.",
+     "texto": "Misa en las Pampas de Pimentel",
+     "lugar": "pimentel_misa"
+    },
+    {
+     "hora": "12:40 p. m.",
+     "texto": "Visita privada a la capilla San Óscar Romero",
+     "lugar": "capilla_romero"
+    },
+    {
+     "hora": "4:30 p. m.",
+     "texto": "Encuentro en el Santuario Nuestra Señora de la Paz",
+     "lugar": "santuario_paz"
+    },
+    {
+     "hora": "5:45 p. m.",
+     "texto": "Encuentro universitario en la USAT",
+     "lugar": "usat"
+    }
+   ]
+  },
+  {
+   "dia": "SÁBADO",
+   "num": "14",
+   "ciudad": "CHICLAYO, SANTA CRUZ Y ZAÑA",
+   "corto": "SÁB",
+   "items": [
+    {
+     "hora": "8:00 a. m.",
+     "texto": "Coronación de la Virgen Inmaculada",
+     "lugar": "catedral_chiclayo"
+    },
+    {
+     "vuelo": true,
+     "de": "CHICLAYO",
+     "a": "SANTA CRUZ",
+     "min": 35
+    },
+    {
+     "hora": "11:00 a. m.",
+     "texto": "Misa en Santa Cruz de Succhabamba",
+     "lugar": "santa_cruz_misa"
+    },
+    {
+     "vuelo": true,
+     "de": "SANTA CRUZ",
+     "a": "CHICLAYO",
+     "min": 35
+    },
+    {
+     "hora": "5:30 p. m.",
+     "texto": "Encuentro de oración por la clausura del Año Jubilar de Santo Toribio de Mogrovejo, en su santuario",
+     "lugar": "santo_toribio_zana"
+    }
+   ]
+  },
+  {
+   "dia": "DOMINGO",
+   "num": "15",
+   "ciudad": "CUSCO Y PUCALLPA",
+   "corto": "DOM",
+   "items": [
+    {
+     "vuelo": true,
+     "de": "CHICLAYO",
+     "a": "CUSCO",
+     "min": 110
+    },
+    {
+     "hora": "10:30 a. m.",
+     "texto": "Encuentro en Saqsaywaman",
+     "lugar": "saqsaywaman"
+    },
+    {
+     "hora": "11:45 a. m.",
+     "texto": "Ángelus frente a la Catedral del Cusco",
+     "lugar": "plaza_cusco"
+    },
+    {
+     "vuelo": true,
+     "de": "CUSCO",
+     "a": "PUCALLPA",
+     "min": 65
+    },
+    {
+     "hora": "3:00 p. m.",
+     "texto": "Encuentro con misioneros y representantes de pueblos amazónicos en Pucallpa",
+     "lugar": "yarinacocha"
+    },
+    {
+     "hora": "4:45 p. m.",
+     "texto": "Misa en la Villa Deportiva Regional Ucayali",
+     "lugar": "videnita"
+    },
+    {
+     "vuelo": true,
+     "de": "PUCALLPA",
+     "a": "LIMA",
+     "min": 70
+    }
+   ]
+  },
+  {
+   "dia": "LUNES",
+   "num": "16",
+   "ciudad": "LIMA Y CALLAO",
+   "corto": "LUN",
+   "items": [
+    {
+     "tramo": "m1",
+     "a": "asilo",
+     "titulo": "Recorrido hacia la casa de acogida"
+    },
+    {
+     "hora": "8:30 a. m.",
+     "texto": "Visita a la casa de acogida de las Hermanitas de los Ancianos Desamparados",
+     "lugar": "asilo"
+    },
+    {
+     "tramo": "m2",
+     "a": null,
+     "titulo": "Recorrido por Marco Polo y Grau hasta el circuito de playas",
+     "fin": "Circuito de playas"
+    },
+    {
+     "hora": "10:30 a. m.",
+     "texto": "Misa en la Base Aérea Las Palmas",
+     "lugar": "las_palmas"
+    },
+    {
+     "hora": "1:15 p. m.",
+     "texto": "Ceremonia de despedida en la Base Aérea del Callao",
+     "lugar": "base_callao"
+    },
+    {
+     "hora": "1:45 p. m.",
+     "texto": "Partida hacia Roma",
+     "lugar": "base_callao"
+    },
+    {
+     "vuelo": true,
+     "de": "LIMA",
+     "a": "ROMA",
+     "min": 3
+    }
+   ]
+  }
+ ]
+}

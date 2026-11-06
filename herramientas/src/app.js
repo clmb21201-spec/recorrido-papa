@@ -484,6 +484,8 @@ function streetDraw(now) {
 const body = $("body"), strip = $("strip");
 $("kick").textContent = TITULO;
 strip.innerHTML = DIAS.map((d, i) => `<div class="sd" data-i="${i}"><div class="a">${d.corto}</div><div class="b">${d.num}</div><div class="u"></div></div>`).join("");
+strip.addEventListener("click", e => { const el = e.target.closest(".sd"); if (el) go(firstOfDay(+el.dataset.i)); });
+strip.addEventListener("dblclick", e => e.stopPropagation());
 const esc = s => String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
 const tc = s => s.toLowerCase().replace(/(^|\s)(\S)/g, (m, a, b) => a + b.toUpperCase()).replace(/ Y /g, " y ");
 function viasDe(k) { const seen = []; ROUTE[k].names.forEach(([n, a, b]) => { if (n && b - a > 400 && !seen.includes(n)) seen.push(n); }); return seen.slice(0, 4); }

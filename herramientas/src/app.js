@@ -1,6 +1,7 @@
 // Página para OBS: agenda de la visita con traslados por calles en tiempo real
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { initHistoria } from "./historia.js";
 
 // Datos: se cargan de los archivos de datos/ (o vienen incrustados en la versión sin internet)
 async function J(p) { const r = await fetch(p, { cache: "no-cache" }); if (!r.ok) throw new Error("No se pudo cargar " + p); return r.json(); }
@@ -573,6 +574,7 @@ function setSpeed(dir) {
 function firstOfDay(di) { return STEPS.findIndex(s => s.kind !== "ov" && s.di === di); }
 addEventListener("keydown", e => {
   const k = e.key, s = STEPS[st.step];
+  if (document.body.dataset.view && document.body.dataset.view !== "ruta" && k !== "f" && k !== "F") return;   // en el inicio o en el especial, las teclas son de esa vista
   if (["ArrowRight", " ", "PageDown", "Enter"].includes(k)) go(st.step + 1);
   else if (["ArrowLeft", "PageUp", "Backspace"].includes(k)) go(st.step - 1);
   else if (k === "0" || k === "Home") go(0);
@@ -631,6 +633,7 @@ function connectSync() {
 
 (async () => {
   await fontsReady(); await carReady; await papaReady;
+  initHistoria(MAPPE);
   const q = new URLSearchParams(location.search), saved = load();
   if (q.has("paso")) { st.step = Math.max(0, Math.min(LAST, +q.get("paso"))); if (moving(STEPS[st.step])) { st.t0 = clock(); st.base = (+q.get("avance") || 0) * legMs(); } if (q.has("demo")) st.demo = true; }
   else if (saved) st = saved;

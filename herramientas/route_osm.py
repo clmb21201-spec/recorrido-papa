@@ -18,8 +18,8 @@ V = {k: (v["lat"], v["lon"]) for k, v in _AG["lugares"].items()}
 # "auto": tramo en auto cerrado (se ve la camioneta); si no, papamóvil
 LEGS = {
  "w1": {"ciudad": "lima", "auto": True,
-        "pre": [(-12.0106, -77.1158), (-12.0109, -77.1146), (-12.01054, -77.11322), (-12.0106, -77.11245), (-12.0106, -77.1114)],   # dentro de la base: de la plataforma a la Av. Faucett
-        "pts": [(-12.0106, -77.1112), (-12.05355, -77.09807), (-12.0744, -77.09942), (-12.07776, -77.08889), (-12.07777, -77.08288), (-12.07354, -77.06253),
+        "privadas": True,   # sale de la plataforma por las calles internas de la base (en el mapa figuran como privadas)
+        "pts": [(-12.0107, -77.1160), (-12.05355, -77.09807), (-12.0744, -77.09942), (-12.07776, -77.08889), (-12.07777, -77.08288), (-12.07354, -77.06253),
                 (-12.08935, -77.06954), (-12.09096, -77.06476), (-12.0884, -77.06464), (-12.06322, -77.04416), (-12.0610, -77.0424)],
         "por": ["Avenida Elmer Faucett", "Avenida de La Marina", "Avenida Antonio José de Sucre", "Avenida Javier Prado Oeste", "Avenida Brasil"],
         "fuente": "Monseñor Guillermo Inca (Conferencia Episcopal, 9 nov.) y general Víctor Meza (PNP): Faucett, La Marina, Sucre, Javier Prado y Brasil"},
@@ -58,7 +58,8 @@ def grafo(pbf):
     for o in osmium.FileProcessor(pbf).with_locations():
         if not o.is_way(): continue
         hw = o.tags.get("highway", "").replace("_link", "")
-        if hw not in COST or o.tags.get("access") in ("private", "no") or o.tags.get("area") == "yes": continue
+        if hw not in COST or o.tags.get("access") == "no" or o.tags.get("area") == "yes": continue
+        priv = o.tags.get("access") == "private"
         nm = o.tags.get("name", ""); nm = ALIAS.get(nm, nm)
         ids = []
         for n in o.nodes:
@@ -67,23 +68,24 @@ def grafo(pbf):
         for a, b in zip(ids, ids[1:]):
             (la1, lo1), (la2, lo2) = coords[a], coords[b]
             d = math.hypot((lo2 - lo1) * 108900, (la2 - la1) * 110540)
-            adj.setdefault(a, []).append((b, d, hw, nm)); adj.setdefault(b, []).append((a, d, hw, nm))
+            adj.setdefault(a, []).append((b, d, hw, nm, priv)); adj.setdefault(b, []).append((a, d, hw, nm, priv))
     print("nodos", len(adj))
-    good = [n for n, es in adj.items() if any(e[2] in ("trunk", "primary", "secondary", "tertiary", "residential", "unclassified") for e in es)]
+    good = [n for n, es in adj.items() if any(e[2] in ("trunk", "primary", "secondary", "tertiary", "residential", "unclassified") and not e[4] for e in es)]
     return coords, adj, good
 G = {}
 
 def nearest(la, lo):
     return min(GOOD, key=lambda n: (coords[n][0] - la) ** 2 + ((coords[n][1] - lo) * 0.98) ** 2)
 
-def dijkstra(s, t, por):
+def dijkstra(s, t, por, privadas=False):
     dist, prev = {s: 0}, {}
     pq = [(0, s)]
     while pq:
         d, u = heapq.heappop(pq)
         if u == t: break
         if d > dist[u]: continue
-        for v, w, hw, nm in adj[u]:
+        for v, w, hw, nm, priv in adj[u]:
+            if priv and not privadas: continue
             c = w * (0.6 if nm in por else COST[hw])
             nd = d + c
             if nd < dist.get(v, 1e18): dist[v] = nd; prev[v] = (u, nm); heapq.heappush(pq, (nd, v))
@@ -98,9 +100,11 @@ for k, L in LEGS.items():
     coords, adj, GOOD = G[L["ciudad"]]
     ll = [V[p] if isinstance(p, str) else p for p in L["pts"]]
     snap = [nearest(*p) for p in ll]
+    if L.get("privadas"):   # el primer punto puede caer en una calle interna
+        la, lo = ll[0]; snap[0] = min(adj, key=lambda n: (coords[n][0] - la) ** 2 + ((coords[n][1] - lo) * 0.98) ** 2)
     path, names = [snap[0]], []
     for a, b in zip(snap, snap[1:]):
-        p, n = dijkstra(a, b, set(L["por"])); path += p[1:]; names += n
+        p, n = dijkstra(a, b, set(L["por"]), L.get("privadas", False)); path += p[1:]; names += n
     # quita idas y vueltas: si el trazado vuelve a pasar por un nodo (p. ej. un punto de paso que cayó en una calle lateral),
     # se elimina el tramo intermedio
     i = 0

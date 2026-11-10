@@ -545,9 +545,12 @@ const CARD = $("card");
 const CREDITOS = AG.creditos || [];
 CARD.innerHTML = `<svg viewBox="150 40 900 840"></svg>
   <div class="cc" data-c="cover"><div class="tx"><div class="t">${esc(AG.caratula || TITULO)}</div><div class="u"></div>
-    <div class="s">${esc(AG.medio || "")}</div></div></div>
+    <div class="s">${esc(AG.medio || "")}</div>
+    <div class="nav"><div class="k">Cómo navegar</div>
+      <div class="kl"><span><b class="ar">→</b> o <b>Espacio</b> siguiente</span><span><b class="ar">←</b> anterior</span><span><b>1 – 6</b> o clic en la barra de días: ir a un día</span>
+      <span><b>P</b> pausa</span><span><b>+ / −</b> velocidad</span><span><b>F</b> pantalla completa</span><span><b>H</b> ayuda</span><span><b>0</b> volver a esta carátula</span></div></div></div></div>
   <div class="cc" data-c="cred"><div class="tx cr"><div class="k">Créditos</div>${CREDITOS.map(c => `<h3>${esc(c.rol)}</h3>${c.nombres.map((n, i) => `<p class="${c.nombres.length > 2 ? "l" : ""}">${esc(n)}</p>`).join("")}`).join("")}
-    <div class="u"></div><div class="s">${esc(AG.medio || "")}</div></div></div>`;
+    <div class="u"></div><div class="s">${esc([AG.medio, AG.anio].filter(Boolean).join(" · "))}</div></div></div>`;
 { const sv = CARD.querySelector("svg");
   MAPPE.depts.forEach(n => add(sv, "path", { d: n.d, class: "dp" + (TOUR.has(n.name) ? " tour" : "") }));
   add(sv, "path", { d: MAPPE.peru, class: "pe" });

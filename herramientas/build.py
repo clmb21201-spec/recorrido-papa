@@ -47,5 +47,9 @@ inl = {"agenda": D("agenda.json"), "peru": D("peru.json"), "ciudades": CIUDADES,
 off = tpl.replace("/*__FONTS__*/", css(True)).replace("<!--__DATA__-->", "<script>window.__INLINE__=" + json.dumps(inl, ensure_ascii=False, separators=(",", ":")) + ";</script>")
 off = off.replace('<script type="module" src="app.js"></script>', '<script type="module">' + app.replace("</script", "<\\/script") + "</script>")
 open(os.path.join(DIST, "recorrido_papa_offline.html"), "w", encoding="utf-8").write(off)
+# versiones offline con formato fijo
+for fmt in ("horizontal", "vertical"):
+    open(os.path.join(DIST, f"recorrido_papa_offline_{fmt}.html"), "w", encoding="utf-8").write(
+        off.replace("<script>window.__INLINE__=", f'<script>window.__FORMATO__="{fmt}";</script><script>window.__INLINE__=', 1))
 for f in ("web/index.html", "web/app.js", "dist/pagina_claude.html", "dist/recorrido_papa_offline.html"):
     print(f, os.path.getsize(os.path.join(RAIZ, f)) // 1024, "KB")

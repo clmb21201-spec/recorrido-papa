@@ -28,11 +28,12 @@ const PAPA_BIN = INL ? Uint8Array.from(atob(INL.papa), c => c.charCodeAt(0)).buf
   : await fetch("modelos/papa.b64.txt").then(r => r.text()).then(t => Uint8Array.from(atob(t.trim()), c => c.charCodeAt(0)).buffer);
 // formato: horizontal 1920×1080 (mapa 1160×1080 + panel a la derecha) o vertical 1080×1920 (mapa arriba, panel abajo).
 // Se elige con ?vertical / ?horizontal, la tecla V (se recuerda en este navegador) o el valor por defecto de la versión.
-const VERT = (() => { const q = new URLSearchParams(location.search);
+const FIJO = window.__FORMATO__ || null;   // "horizontal" o "vertical": versión con formato fijo (no cambia ni con la tecla V)
+const VERT = (() => { if (FIJO) return FIJO === "vertical"; const q = new URLSearchParams(location.search);
   if (q.has("vertical")) return true; if (q.has("horizontal")) return false;
   try { const v = localStorage.getItem("papa_formato"); if (v) return v === "vertical"; } catch (e) {}
   return innerWidth < innerHeight; })();   // por defecto: pantalla vertical (celular) → vertical; horizontal → horizontal
-const VERT_AUTO = (() => { const q = new URLSearchParams(location.search); if (q.has("vertical") || q.has("horizontal")) return false;
+const VERT_AUTO = (() => { if (FIJO) return false; const q = new URLSearchParams(location.search); if (q.has("vertical") || q.has("horizontal")) return false;
   try { if (localStorage.getItem("papa_formato")) return false; } catch (e) {} return true; })();
 const LS = VERT ? 1.45 : 1;   // en vertical (celular) los rótulos del mapa van más grandes
 const SW = VERT ? 1080 : 1920, SH = VERT ? 1920 : 1080;
@@ -677,7 +678,7 @@ addEventListener("keydown", e => {
   else if ((k === "-" || k === "_") && moving(s)) setSpeed(-1);
   else if ((k === "n" || k === "N") && moving(s)) setSpeed(0);
   else if (k === "f" || k === "F") toggleFull();
-  else if (k === "v" || k === "V") { try { localStorage.setItem("papa_formato", VERT ? "horizontal" : "vertical"); } catch (e) {} location.reload(); }
+  else if ((k === "v" || k === "V") && !FIJO) { try { localStorage.setItem("papa_formato", VERT ? "horizontal" : "vertical"); } catch (e) {} location.reload(); }
   else if (k === "h" || k === "H") { const h = $("help"); h.style.display = h.style.display === "block" ? "none" : "block"; }
   else return;
   e.preventDefault();

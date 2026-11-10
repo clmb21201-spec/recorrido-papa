@@ -100,6 +100,15 @@ for k, L in LEGS.items():
     path, names = [snap[0]], []
     for a, b in zip(snap, snap[1:]):
         p, n = dijkstra(a, b, set(L["por"])); path += p[1:]; names += n
+    # quita idas y vueltas: si el trazado vuelve a pasar por un nodo (p. ej. un punto de paso que cayó en una calle lateral),
+    # se elimina el tramo intermedio
+    i = 0
+    while i < len(path):
+        j = len(path) - 1 - path[::-1].index(path[i])
+        if j > i:
+            print(f"  {k}: se quita una ida y vuelta de {j - i} nodos")
+            del path[i + 1:j + 1]; del names[i:j]
+        i += 1
     pts = [coords[n] for n in path]
     segs = []
     for (a, b), nm in zip(zip(pts, pts[1:]), names):

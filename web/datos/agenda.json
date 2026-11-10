@@ -3,10 +3,10 @@
  "velocidad_base": 30,
  "vuelo_seg": 5,
  "pausa_llegada_seg": 3,
- "nota": "velocidad_base: 30 = todo corre a ×30 (poner 1 para tiempo real). vuelo_seg: duración fija de cada vuelo en segundos (0 = usar los minutos de cada vuelo). Solo los recorridos confirmados (m1, m2) tienen desplazamiento. pausa_llegada_seg: segundos que se queda al llegar (aterrizaje o fin de recorrido) antes de pasar a la actividad siguiente.",
+ "nota": "velocidad_base: 30 = todo corre a ×30 (poner 1 para tiempo real). vuelo_seg: duración fija de cada vuelo en segundos (0 = usar los minutos de cada vuelo). Solo los recorridos confirmados tienen desplazamiento (w1, w2: llegada del 11; t1, t2: Ruta 4 del 12; c1: Cusco; m1, m2: lunes 16). Fuente: mapas oficiales de la Conferencia Episcopal (9 nov.). Pucallpa queda pendiente hasta el 13 nov. pausa_llegada_seg: segundos que se queda al llegar (aterrizaje o fin de recorrido) antes de pasar a la actividad siguiente.",
  "lugares": {
   "base_callao": {
-   "nombre": "Base Aérea del Callao",
+   "nombre": "Grupo Aéreo N.º 8",
    "ciudad": "lima",
    "pais": "LIMA",
    "lat": -12.0219,
@@ -164,11 +164,48 @@
    "lat": -6.75734,
    "lon": -79.86201,
    "fuente": "Micole: Av. Augusto B. Leguía 2598, José Leonardo Ortiz"
+  },
+  "maria_aux": {
+   "nombre": "Basílica María Auxiliadora",
+   "ciudad": "lima",
+   "pais": "LIMA",
+   "lat": -12.06089,
+   "lon": -77.04303,
+   "fuente": "OpenStreetMap (Av. Brasil, Breña)"
+  },
+  "centro_civico": {
+   "nombre": "Centro Cívico",
+   "ciudad": "lima",
+   "pais": "LIMA",
+   "lat": -12.0575,
+   "lon": -77.0377,
+   "fuente": "Mapa oficial «Ruta 4»: Av. Garcilaso de la Vega"
+  },
+  "nazarenas": {
+   "nombre": "Santuario de Las Nazarenas",
+   "ciudad": "lima",
+   "pais": "LIMA",
+   "lat": -12.0452,
+   "lon": -77.0372,
+   "fuente": "OpenStreetMap (Av. Tacna y Jr. Huancavelica)"
+  },
+  "aeropuerto_cusco": {
+   "nombre": "Aeropuerto Alejandro Velasco Astete",
+   "ciudad": "cusco",
+   "pais": "CUSCO",
+   "lat": -13.539,
+   "lon": -71.944,
+   "fuente": "OpenStreetMap (Av. Velasco Astete)"
   }
  },
  "duracion_min": {
   "m1": 25,
-  "m2": 10
+  "m2": 10,
+  "w1": 25,
+  "w2": 15,
+  "t1": 8,
+  "t2": 5,
+  "c1": 25
  },
  "dias": [
   {
@@ -185,8 +222,22 @@
     },
     {
      "hora": "5:30 p. m.",
-     "texto": "Llegada a la Base Aérea del Callao",
+     "texto": "Llegada al Grupo Aéreo N.º 8 del Callao",
      "lugar": "base_callao"
+    },
+    {
+     "tramo": "w1",
+     "a": "maria_aux",
+     "titulo": "En auto cerrado hasta la Basílica María Auxiliadora"
+    },
+    {
+     "texto": "Cambio al papamóvil en la Basílica María Auxiliadora",
+     "lugar": "maria_aux"
+    },
+    {
+     "tramo": "w2",
+     "a": "palacio",
+     "titulo": "En papamóvil hasta la Plaza Mayor (aforo: 11 000 fieles)"
     },
     {
      "hora": "6:15 p. m.",
@@ -211,6 +262,24 @@
    "ciudad": "LIMA",
    "corto": "JUE",
    "items": [
+    {
+     "texto": "Sale de la Nunciatura en auto cerrado y sube al papamóvil en el Centro Cívico",
+     "lugar": "centro_civico"
+    },
+    {
+     "tramo": "t1",
+     "a": "nazarenas",
+     "titulo": "En papamóvil por Garcilaso de la Vega y Tacna"
+    },
+    {
+     "texto": "Breve oración ante el Señor de los Milagros en Las Nazarenas",
+     "lugar": "nazarenas"
+    },
+    {
+     "tramo": "t2",
+     "a": "plaza_mayor",
+     "titulo": "En papamóvil hasta la Plaza de Armas"
+    },
     {
      "hora": "9:30 a. m.",
      "texto": "Encuentro con los obispos del Perú",
@@ -334,6 +403,15 @@
      "a": "CUSCO",
      "min": 130,
      "hora": "7:50 a. m."
+    },
+    {
+     "texto": "Llegada al aeropuerto Alejandro Velasco Astete",
+     "lugar": "aeropuerto_cusco"
+    },
+    {
+     "tramo": "c1",
+     "a": "saqsaywaman",
+     "titulo": "En papamóvil hasta Saqsaywaman (sujeto al clima)"
     },
     {
      "hora": "10:30 a. m.",

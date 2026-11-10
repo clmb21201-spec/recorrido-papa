@@ -12,10 +12,14 @@ const TITULO = AG.titulo, LUGARES = AG.lugares, DURACION_MIN = AG.duracion_min, 
 const CITY_IDS = [...new Set(Object.values(LUGARES).map(l => l.ciudad))];
 const CITIES = {};
 await Promise.all(CITY_IDS.map(async c => { try { CITIES[c] = INL ? INL.ciudades[c] || null : await J("datos/ciudades/" + c + ".json"); } catch (e) { CITIES[c] = null; } }));
-const LIMA = CITIES.lima; if (LIMA) LIMA.routes = RUTAS.tramos;
+// recorridos: cada tramo pertenece a una ciudad (coordenadas en metros de esa ciudad)
+const TRAMOS = RUTAS.tramos, cityOfLeg = k => (TRAMOS[k] && TRAMOS[k].ciudad) || "lima";
+const PAIS_CIU = {}; Object.values(LUGARES).forEach(l => { if (!PAIS_CIU[l.ciudad]) PAIS_CIU[l.ciudad] = l.pais; });
 const paisDe = it => it.ciudad || (it.lugar && LUGARES[it.lugar] ? LUGARES[it.lugar].pais : "LIMA");
 const CAR_BIN = INL ? Uint8Array.from(atob(INL.car), c => c.charCodeAt(0)).buffer
   : await fetch("modelos/papamovil.b64.txt").then(r => r.text()).then(t => Uint8Array.from(atob(t.trim()), c => c.charCodeAt(0)).buffer);
+const SUV_BIN = INL ? (INL.suv ? Uint8Array.from(atob(INL.suv), c => c.charCodeAt(0)).buffer : null)
+  : await fetch("modelos/camioneta.b64.txt").then(r => r.ok ? r.text() : null).then(t => t ? Uint8Array.from(atob(t.trim()), c => c.charCodeAt(0)).buffer : null).catch(() => null);
 const PLANE_BIN = INL ? Uint8Array.from(atob(INL.avion), c => c.charCodeAt(0)).buffer
   : await fetch("modelos/avion.b64.txt").then(r => r.text()).then(t => Uint8Array.from(atob(t.trim()), c => c.charCodeAt(0)).buffer);
 const HELI_BIN = INL ? Uint8Array.from(atob(INL.heli), c => c.charCodeAt(0)).buffer
@@ -29,13 +33,13 @@ const $ = id => document.getElementById(id);
 /* ======================= pasos ======================= */
 const STEPS = [{ kind: "ov" }];
 DIAS.forEach((d, di) => d.items.forEach((it, ii) => {
-  if (it.tramo) STEPS.push({ kind: "leg", di, ii, leg: it.tramo, to: it.a, fin: it.fin || null });
+  if (it.tramo) STEPS.push({ kind: "leg", di, ii, leg: it.tramo, to: it.a, fin: it.fin || null, auto: !!(TRAMOS[it.tramo] && TRAMOS[it.tramo].auto) });
   else if (it.vuelo) STEPS.push({ kind: "air", di, ii, from: it.de, to: it.a, min: it.min || 60, heli: it.vehiculo === "helicoptero" });
   else STEPS.push({ kind: "ev", di, ii, at: it.lugar || null, city: paisDe(it), c3: it.lugar && LUGARES[it.lugar] ? LUGARES[it.lugar].ciudad : null });
 }));
 const LAST = STEPS.length - 1;
-STEPS.forEach(s => { if (s.kind === "leg") s.c3 = "lima"; s.mode = s.kind === "leg" || (s.kind === "ev" && s.c3 && CITIES[s.c3]) ? "street" : "country"; });
-const cityOf = s => s.kind === "ov" ? null : s.kind === "leg" ? "LIMA" : s.kind === "air" ? (arrived() && !INTL.has(s.to) ? s.to : null) : s.city;
+STEPS.forEach(s => { if (s.kind === "leg") s.c3 = cityOfLeg(s.leg); s.mode = s.kind === "leg" || (s.kind === "ev" && s.c3 && CITIES[s.c3]) ? "street" : "country"; });
+const cityOf = s => s.kind === "ov" ? null : s.kind === "leg" ? PAIS_CIU[s.c3] || "LIMA" : s.kind === "air" ? (arrived() && !INTL.has(s.to) ? s.to : null) : s.city;
 const moving = s => s.kind === "leg" || s.kind === "air";
 
 /* ======================= estado y tiempo ======================= */
@@ -171,7 +175,7 @@ function countryDraw(now) {
     p.lbl.setAttribute("font-size", boxed ? 30 : cur ? 22 : 19); p.lbl.setAttribute("opacity", show ? 1 : 0);
     p.lbl.setAttribute("fill", boxed ? "#fff" : cur || seen.has(n) || s.kind === "ov" ? INK : "#8C877D"); p.lbl.classList.toggle("cur", boxed);
     const it = s.kind === "ev" ? DIAS[s.di].items[s.ii] : null;   // hora bajo el nombre de la ciudad actual
-    p.tag.textContent = boxed && it ? it.hora : ""; p.tag.setAttribute("font-size", 20); p.tag.setAttribute("y", dy + 48);
+    p.tag.textContent = boxed && it ? it.hora || "" : ""; p.tag.setAttribute("font-size", 20); p.tag.setAttribute("y", dy + 48);
     if (cur && boxed) {
       const b = p.lbl.getBBox();
       p.box.setAttribute("x", b.x - 16); p.box.setAttribute("y", b.y - 8); p.box.setAttribute("width", b.width + 32); p.box.setAttribute("height", b.height + 14);
@@ -249,15 +253,16 @@ for (const c in CITIES) {
 // trayectos: suavizado y remuestreo cada 3 m
 const STEP_M = 3;
 const ROUTE = {};
-for (const k in (LIMA ? LIMA.routes : {})) {
-  const p = LIMA.routes[k].p; let pts = []; for (let i = 0; i < p.length; i += 2) pts.push([p[i], p[i + 1]]);
+for (const k in TRAMOS) {
+  if (!CG[cityOfLeg(k)]) continue;
+  const p = TRAMOS[k].p; let pts = []; for (let i = 0; i < p.length; i += 2) pts.push([p[i], p[i + 1]]);
   for (let it = 0; it < 2; it++) { const s = [pts[0]]; for (let i = 0; i < pts.length - 1; i++) { const [a, b] = [pts[i], pts[i + 1]]; s.push([a[0] * .75 + b[0] * .25, a[1] * .75 + b[1] * .25], [a[0] * .25 + b[0] * .75, a[1] * .25 + b[1] * .75]); } s.push(pts[pts.length - 1]); pts = s; }
   const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
   const L = cum[cum.length - 1], n = Math.floor(L / STEP_M) + 1, rs = new Float32Array(n * 2); let j = 0;
   for (let i = 0; i < n; i++) { const s = i * STEP_M; while (j < cum.length - 2 && cum[j + 1] < s) j++; const t = (s - cum[j]) / Math.max(1e-6, cum[j + 1] - cum[j]); rs[i * 2] = pts[j][0] + (pts[j + 1][0] - pts[j][0]) * t; rs[i * 2 + 1] = pts[j][1] + (pts[j + 1][1] - pts[j][1]) * t; }
-  ROUTE[k] = { pts: rs, n, L, names: LIMA.routes[k].names };
+  ROUTE[k] = { pts: rs, n, L, names: TRAMOS[k].names, city: cityOfLeg(k) };
 }
-function ribbon(R, width, hex, opacity, order) {
+function ribbon(R, width, hex, opacity, order) {   // se agrega al grupo de la ciudad del tramo
   const n = R.n, pos = new Float32Array(n * 6), idx = [];
   for (let i = 0; i < n; i++) {
     const a = Math.max(0, i - 2), b = Math.min(n - 1, i + 2);
@@ -267,7 +272,7 @@ function ribbon(R, width, hex, opacity, order) {
     if (i < n - 1) { const o = i * 2; idx.push(o, o + 1, o + 2, o + 1, o + 3, o + 2); }
   }
   const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.BufferAttribute(pos, 3)); geo.setIndex(idx);
-  const m = new THREE.Mesh(geo, flatMat(hex, opacity)); m.renderOrder = order; m.frustumCulled = false; CG.lima.add(m); return m;
+  const m = new THREE.Mesh(geo, flatMat(hex, opacity)); m.renderOrder = order; m.frustumCulled = false; CG[R.city].add(m); return m;
 }
 const ORD = { plan: 100, edge: 101, line: 102, lab: 103, pin: 104 };
 const RIB = {};
@@ -317,7 +322,7 @@ function buildRouteLabels(k) {
     if (!nm || b - a < 150) return;
     const spots = b - a < 900 ? [(a + b) / 2] : Array.from({ length: Math.floor((b - a - 300) / 700) + 1 }, (_, i) => a + 300 + i * 700);
     spots.forEach(s => {
-      const p = routeAt(k, s), m = flatLabel([nm], { px: 64, font: serif, color: INK, halo: "#fff" }, 17, CG.lima);
+      const p = routeAt(k, s), m = flatLabel([nm], { px: 64, font: serif, color: INK, halo: "#fff" }, 17, CG[ROUTE[k].city]);
       const nx = -Math.sin(p.h), ny = Math.cos(p.h); m.userData = { x: p.x + nx * 30, y: p.y + ny * 30 }; arr.push(m);
     });
   });
@@ -376,16 +381,20 @@ const papaReady = new Promise(res => {
   }, () => res());
 });
 const CAR_LEN = 42;
-const carReady = new Promise(res => {
-  new GLTFLoader().parse(CAR_BIN, "", gl => {
+// vehículos: papamóvil y camioneta (tramos en auto cerrado); se ve el que corresponde al tramo
+const CARV = { papa: new THREE.Group(), auto: new THREE.Group() }; car.add(CARV.papa, CARV.auto);
+const loadVeh = (bin, holderParent, len) => new Promise(res => {
+  if (!bin) return res();
+  new GLTFLoader().parse(bin, "", gl => {
     const m = gl.scene; m.rotation.x = Math.PI / 2;
     const box = new THREE.Box3().setFromObject(m), sz = box.getSize(new THREE.Vector3());
-    const k = CAR_LEN / Math.max(sz.x, sz.y, sz.z); m.scale.setScalar(k);
+    const k = len / Math.max(sz.x, sz.y, sz.z); m.scale.setScalar(k);
     const holder = new THREE.Group(); holder.add(m); m.position.z = 0;
     m.traverse(o => { if (o.isMesh) { o.renderOrder = 200; o.material.depthTest = true; } });
-    const b2 = new THREE.Box3().setFromObject(holder); m.position.z = -b2.min.z + .5; car.add(holder); res();
+    const b2 = new THREE.Box3().setFromObject(holder); m.position.z = -b2.min.z + .5; holderParent.add(holder); res();
   }, () => res());
 });
+const carReady = Promise.all([loadVeh(CAR_BIN, CARV.papa, CAR_LEN), loadVeh(SUV_BIN, CARV.auto, CAR_LEN * 1.05)]);
 
 // pose de la cámara
 const FRONT_YAW = THREE.MathUtils.degToRad(28), BACK = 430, HGT = 330;
@@ -420,6 +429,7 @@ function streetDraw(now) {
   carH = unwrapTo(S.h, carH) * .25 + carH * .75;
   car.position.set(S.x, S.y, 0); car.rotation.z = carH + Math.PI / 2;
   car.visible = S.moving; papa.visible = !S.moving;
+  const useAuto = s.kind === "leg" && s.auto && CARV.auto.children.length > 0; CARV.auto.visible = useAuto; CARV.papa.visible = !useAuto;
   if (!S.moving) { const v = VP[s.at]; if (v) { S.x = v.x; S.y = v.y; } papa.position.set(S.x, S.y, 0); }
   // tramos: recorridos, actual y siguiente planificado
   const day = s.di;
@@ -471,7 +481,7 @@ function streetDraw(now) {
   // rótulo del punto final del recorrido (p. ej. CIRCUITO DE PLAYAS) mientras dura la pausa de llegada
   for (const kk in finLabels) finLabels[kk].visible = false;
   if (s.kind === "leg" && s.fin && arrived()) {
-    const m = finLabels[s.leg] || (finLabels[s.leg] = flatLabel([s.fin.toUpperCase()], { px: 60, font: serif, color: "#fff", box: INK, order: ORD.pin + 1 }, 21, CG.lima));
+    const m = finLabels[s.leg] || (finLabels[s.leg] = flatLabel([s.fin.toUpperCase()], { px: 60, font: serif, color: "#fff", box: INK, order: ORD.pin + 1 }, 21, CG[ROUTE[s.leg].city]));
     const e = routeAt(s.leg, ROUTE[s.leg].L), fx = Math.cos(rz - Math.PI / 2), fy = Math.sin(rz - Math.PI / 2), off = 21 / 2 + 40;
     m.userData = { x: e.x + fx * off, y: e.y + fy * off }; place(m); m.visible = true;
   }
@@ -501,7 +511,7 @@ function dayHTML(di) {
     ? `<div class="ev leg" data-i="${i}"><span class="nowtag">EN CAMINO</span><div class="lt">${esc(it.titulo || "Traslado a " + LUGARES[it.a].nombre)}</div><div class="lv">${viasDe(it.tramo).map(esc).join(" · ")}</div><div class="lp"><div class="bar"><i></i></div><div class="lx"></div></div></div>`
     : it.vuelo
     ? `<div class="ev leg air" data-i="${i}"><span class="nowtag">EN VUELO</span><div class="lt">${it.hora ? "<b>" + it.hora + "</b> " : ""}${INTL.has(it.de) ? "Llegada desde " + esc(nombreC(it.de)) : (it.vehiculo === "helicoptero" ? "Helicóptero a " : "Vuelo a ") + esc(nombreC(it.a))}</div><div class="lv">${esc(nombreC(it.de))} → ${esc(nombreC(it.a))}${kmEntre(it.de, it.a) ? " · " + Math.round(kmEntre(it.de, it.a) / 10) * 10 + " km aprox." : ""}${it.min && !INTL.has(it.de) && !INTL.has(it.a) ? " · " + (it.min >= 60 ? Math.floor(it.min / 60) + " h " + String(it.min % 60).padStart(2, "0") : it.min + " min") : ""}</div><div class="lp"><div class="bar"><i></i></div><div class="lx"></div></div></div>`
-    : `<div class="ev" data-i="${i}"><span class="nowtag">AHORA</span><b>${it.hora}</b> ${esc(it.texto)}</div>`).join("")}</div>`;
+    : `<div class="ev" data-i="${i}"><span class="nowtag">AHORA</span>${it.hora ? "<b>" + it.hora + "</b> " : ""}${esc(it.texto)}</div>`).join("")}</div>`;
 }
 function ovHTML() {
   return `<div class="ovt">Agenda de<br>la visita</div><div class="ovsub">Seis días, siete ciudades</div>

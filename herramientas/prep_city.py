@@ -7,13 +7,14 @@ from shapely.ops import unary_union, linemerge, split
 from shapely.prepared import prep
 
 # Uso: python3 herramientas/prep_city.py <ciudad> <archivo .osm.pbf o .osm>
-#   lima      -> además de calles, usa los recorridos de fuente/rutas_osm.json y escribe datos/rutas.json
+#   usa los recorridos de esa ciudad en fuente/rutas_osm.json y los agrega a datos/rutas.json (coordenadas en metros de esa ciudad)
 AQUI = os.path.dirname(os.path.abspath(__file__))
 CITY, PBF = sys.argv[1], sys.argv[2]
 DATOS = os.path.join(AQUI, "..", "web", "datos"); os.makedirs(os.path.join(DATOS, "ciudades"), exist_ok=True)
 AG = json.load(open(os.path.join(DATOS, "agenda.json"), encoding="utf-8"))
 VEN = {k: (v["lat"], v["lon"]) for k, v in AG["lugares"].items() if v["ciudad"] == CITY}
-R = json.load(open(os.path.join(AQUI, "fuente", "rutas_osm.json"))) if CITY == "lima" else {"legs": {}}
+R = json.load(open(os.path.join(AQUI, "fuente", "rutas_osm.json")))
+R = {"legs": {k: v for k, v in R["legs"].items() if v.get("ciudad", "lima") == CITY}}   # recorridos de esta ciudad
 ALIAS = {"Óvalo Saloom": "Óvalo La Perla"}
 LAT0 = round(sum(v[0] for v in VEN.values()) / len(VEN), 3) if CITY != "lima" else -12.07
 LON0 = round(sum(v[1] for v in VEN.values()) / len(VEN), 3) if CITY != "lima" else -77.07
@@ -136,9 +137,13 @@ for k, v in R["legs"].items():
 
 lima = {"origin": [LAT0, LON0, KX, KY], "bounds": [round(c) for c in clip.bounds], "layers": layers, "side": side,
         "venues": {k: [round(a, 1) for a in v] for k, v in venues.items()}}
-rutas = {"nota": "Generado por herramientas/route_osm.py y prep_lima.py. Coordenadas en metros locales.",
-         "fuentes": {k: v.get("fuente", "") for k, v in R["legs"].items()}, "tramos": routes}
+for k, v in R["legs"].items(): routes[k].update({"ciudad": CITY, "auto": v.get("auto", False)})
+RP = os.path.join(DATOS, "rutas.json")
+rutas = json.load(open(RP, encoding="utf-8")) if os.path.exists(RP) else {"fuentes": {}, "tramos": {}}
+for k in [k for k, v in rutas["tramos"].items() if v.get("ciudad", "lima") == CITY]: rutas["tramos"].pop(k); rutas["fuentes"].pop(k, None)
+rutas["tramos"].update(routes); rutas["fuentes"].update({k: v.get("fuente", "") for k, v in R["legs"].items()})
+rutas["nota"] = "Generado por herramientas/route_osm.py y prep_city.py. Coordenadas en metros locales de la ciudad de cada tramo (campo ciudad)."
 json.dump(lima, open(os.path.join(DATOS, "ciudades", CITY + ".json"), "w"), separators=(",", ":"), ensure_ascii=False)
 print(CITY + ".json", os.path.getsize(os.path.join(DATOS, "ciudades", CITY + ".json")) // 1024, "KB")
-if CITY == "lima":
+if True:
     json.dump(rutas, open(os.path.join(DATOS, "rutas.json"), "w"), separators=(",", ":"), ensure_ascii=False)

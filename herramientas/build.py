@@ -38,7 +38,8 @@ inl = {"agenda": D("agenda.json"), "peru": D("peru.json"), "ciudades": CIUDADES,
        "car": open(os.path.join(WEB, "modelos", "papamovil.b64.txt")).read().strip(),
        "avion": open(os.path.join(WEB, "modelos", "avion.b64.txt")).read().strip(),
        "papa": open(os.path.join(WEB, "modelos", "papa.b64.txt")).read().strip(),
-       "heli": open(os.path.join(WEB, "modelos", "helicoptero.b64.txt")).read().strip()}
+       "heli": open(os.path.join(WEB, "modelos", "helicoptero.b64.txt")).read().strip(),
+       "suv": open(os.path.join(WEB, "modelos", "camioneta.b64.txt")).read().strip()}
 off = tpl.replace("/*__FONTS__*/", css(True)).replace("<!--__DATA__-->", "<script>window.__INLINE__=" + json.dumps(inl, ensure_ascii=False, separators=(",", ":")) + ";</script>")
 off = off.replace('<script type="module" src="app.js"></script>', '<script type="module">' + app.replace("</script", "<\\/script") + "</script>")
 open(os.path.join(DIST, "recorrido_papa_offline.html"), "w", encoding="utf-8").write(off)

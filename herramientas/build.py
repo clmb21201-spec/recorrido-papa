@@ -47,9 +47,19 @@ inl = {"agenda": D("agenda.json"), "peru": D("peru.json"), "ciudades": CIUDADES,
 # los mapas y la agenda van comprimidos (gzip + base64); la página los descomprime al abrir. Los modelos ya están comprimidos.
 import gzip, base64
 datos = {k: inl.pop(k) for k in ("agenda", "peru", "ciudades", "rutas")}
+def delta(a, step):
+    return a[:step] + [a[i] - a[i - step] for i in range(step, len(a))]
+for c in datos["ciudades"].values():   # capas en diferencias: números cortos que se comprimen mejor
+    for L in c["layers"].values():
+        if L["v"] and all(isinstance(x, int) for x in L["v"]): L["v"] = delta(L["v"], 2); L["i"] = delta(L["i"], 1); L["d"] = 1
 gz = base64.b64encode(gzip.compress(json.dumps(datos, ensure_ascii=False, separators=(",", ":")).encode("utf-8"), 9)).decode()
 off = tpl.replace("/*__FONTS__*/", css(True)).replace("<!--__DATA__-->", "<script>window.__INLINE__=" + json.dumps(inl, separators=(",", ":")) + ';window.__INLINE_GZ__="' + gz + '";</script>')
-off = off.replace('<script type="module" src="app.js"></script>', '<script type="module">' + app.replace("</script", "<\\/script") + "</script>")
+# el código también va comprimido: un cargador pequeño lo descomprime y lo ejecuta
+appgz = base64.b64encode(gzip.compress(app.encode("utf-8"), 9)).decode()
+loader = ('<script type="module">const b=Uint8Array.from(atob("' + appgz + '"),c=>c.charCodeAt(0));'
+          'const t=await new Response(new Blob([b]).stream().pipeThrough(new DecompressionStream("gzip"))).text();'
+          'await import(URL.createObjectURL(new Blob([t],{type:"text/javascript"})));</script>')
+off = off.replace('<script type="module" src="app.js"></script>', loader)
 open(os.path.join(DIST, "recorrido_papa_offline.html"), "w", encoding="utf-8").write(off)
 # versiones offline con formato fijo
 for fmt in ("horizontal", "vertical"):

@@ -259,7 +259,10 @@ scene.add(new THREE.HemisphereLight(0xffffff, 0x9a958c, 1.6));
 const sun = new THREE.DirectionalLight(0xffffff, 1.5); sun.position.set(-400, -300, 900); scene.add(sun);
 let ro = 0;
 function flatMat(hex, opacity = 1) { return new THREE.MeshBasicMaterial({ color: new THREE.Color(hex), transparent: opacity < 1, opacity, depthTest: false, depthWrite: false }); }
+// en el archivo de un solo HTML las capas vienen en diferencias (cada número es la distancia al anterior): se reconstruyen aquí
+function undelta(a, step) { const o = a.slice(); for (let i = step; i < o.length; i++) o[i] += o[i - step]; return o; }
 function layerMesh(L, hex, parent) {
+  if (L.d) { L.v = undelta(L.v, 2); L.i = undelta(L.i, 1); L.d = 0; }
   const geo = new THREE.BufferGeometry();
   const v = L.v, pos = new Float32Array(v.length / 2 * 3);
   for (let i = 0, j = 0; i < v.length; i += 2, j += 3) { pos[j] = v[i]; pos[j + 1] = v[i + 1]; pos[j + 2] = 0; }
@@ -590,6 +593,7 @@ CARD.innerHTML = `<svg viewBox="150 40 900 840"></svg>
 function cardPaint() {
   const c = STEPS[st.step].card || null;
   CARD.classList.toggle("on", !!c);
+  const nv = document.getElementById("nav"); if (nv) nv.style.display = c === "cover" ? "none" : "";   // en la carátula no hacen falta (se toca para empezar)
   CARD.querySelectorAll(".cc").forEach(el => el.classList.toggle("show", el.dataset.c === c));
 }
 let curDay = null;

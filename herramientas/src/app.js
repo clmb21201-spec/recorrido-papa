@@ -350,13 +350,21 @@ function buildRouteLabels(k) {
   });
   return routeLabels[k] = arr;
 }
+// puntos donde van los rótulos de la ruta (por ciudad): ahí no se ponen rótulos grises de calles vecinas, para que no se encimen
+const RLP = {};
+for (const k in ROUTE) ROUTE[k].names.forEach(([nm, a, b]) => {
+  if (!nm || b - a < 150) return;
+  const spots = b - a < 900 ? [(a + b) / 2] : Array.from({ length: Math.floor((b - a - 300) / 700) + 1 }, (_, i) => a + 300 + i * 700);
+  spots.forEach(sp => { const p = routeAt(k, sp); (RLP[ROUTE[k].city] = RLP[ROUTE[k].city] || []).push([p.x, p.y]); });
+});
+const SIDE_GAP = 190 * LS;   // distancia mínima (m) entre un rótulo gris y uno de la ruta
 const sideLabels = new Map();
 function dropSide(key) { const m = sideLabels.get(key); m.parent.remove(m); m.material.map.dispose(); m.material.dispose(); m.geometry.dispose(); sideLabels.delete(key); }
 function updateSide(city, tx, ty) {
   for (const key of [...sideLabels.keys()]) if (!key.startsWith(city + ":")) dropSide(key);
   CITIES[city].side.forEach((l, i) => {
     const key = city + ":" + i, d = Math.hypot(l[1] - tx, l[2] - ty);
-    if (d < 1300 && !sideLabels.has(key)) { const m = flatLabel([l[0]], { px: 48, font: sans, color: "#9A9DA4", halo: "#fff" }, 13, CG[city]); m.userData = { x: l[1], y: l[2] }; sideLabels.set(key, m); }
+    if (d < 1300 && !sideLabels.has(key) && !(RLP[city] || []).some(([x, y]) => Math.hypot(l[1] - x, l[2] - y) < SIDE_GAP)) { const m = flatLabel([l[0]], { px: 48, font: sans, color: "#9A9DA4", halo: "#fff" }, 13, CG[city]); m.userData = { x: l[1], y: l[2] }; sideLabels.set(key, m); }
     else if (d > 2100 && sideLabels.has(key)) dropSide(key);
   });
 }
@@ -376,7 +384,7 @@ function venueLabel(k) {
   const name = LUGARES[k].nombre.toUpperCase(), words = name.split(" ");
   let lines = [name];
   if (name.length > 24) { const h = Math.ceil(words.length / 2); lines = [words.slice(0, h).join(" "), words.slice(h).join(" ")]; }
-  const m = flatLabel(lines, { px: 60, font: serif, color: "#fff", box: INK, order: ORD.pin + 1 }, 21 * lines.length, CG[v.city]);
+  const m = flatLabel(lines, { px: 60, font: serif, color: "#fff", box: INK, order: ORD.pin + 1 }, 16 * lines.length, CG[v.city]);
   m.userData = { x: v.x, y: v.y }; return v.label = m;
 }
 
@@ -520,7 +528,7 @@ function streetDraw(now) {
   // rótulo del punto final del recorrido (p. ej. CIRCUITO DE PLAYAS) mientras dura la pausa de llegada
   for (const kk in finLabels) finLabels[kk].visible = false;
   if (s.kind === "leg" && s.fin && arrived()) {
-    const m = finLabels[s.leg] || (finLabels[s.leg] = flatLabel([s.fin.toUpperCase()], { px: 60, font: serif, color: "#fff", box: INK, order: ORD.pin + 1 }, 21, CG[ROUTE[s.leg].city]));
+    const m = finLabels[s.leg] || (finLabels[s.leg] = flatLabel([s.fin.toUpperCase()], { px: 60, font: serif, color: "#fff", box: INK, order: ORD.pin + 1 }, 16, CG[ROUTE[s.leg].city]));
     const e = routeAt(s.leg, ROUTE[s.leg].L), fx = Math.cos(rz - Math.PI / 2), fy = Math.sin(rz - Math.PI / 2), off = 21 / 2 + 40;
     m.userData = { x: e.x + fx * off, y: e.y + fy * off }; place(m); m.visible = true;
   }

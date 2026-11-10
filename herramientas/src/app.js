@@ -66,11 +66,13 @@ let st = { step: 0, base: 0, t0: 0, speed: 1, paused: false };
 let OFFSET = 0, sock = null, sockOk = false;
 const clock = () => Date.now() + OFFSET;
 const MY_ID = Math.random().toString(36).slice(2);
+// versión para lectores (web de El Comercio): cada uno navega por su cuenta, sin sincronizar, y siempre empieza en la carátula
+const PUBLICO = !!window.__PUBLICO__ || new URLSearchParams(location.search).has("lector");
 function save(local) {
   try { localStorage.setItem("papa_live_v1", JSON.stringify(st)); } catch (e) {}
   if (!local && sockOk) try { sock.send(JSON.stringify({ type: "set", state: st, id: MY_ID })); } catch (e) {}
 }
-function load() { try { const v = JSON.parse(localStorage.getItem("papa_live_v1")); if (v && v.step >= 0 && v.step <= LAST) return v; } catch (e) {} return null; }
+function load() { if (PUBLICO) return null; try { const v = JSON.parse(localStorage.getItem("papa_live_v1")); if (v && v.step >= 0 && v.step <= LAST) return v; } catch (e) {} return null; }
 // velocidad_base (agenda.json): 30 = por ahora todo corre a ×30; 1 = tiempo real. Los vuelos duran vuelo_seg segundos fijos.
 const BASE = AG.velocidad_base || 1, VUELO_SEG = AG.vuelo_seg || 0, PAUSA_SEG = AG.pausa_llegada_seg ?? 3;
 // ya llegó (vuelo o recorrido) y está en la pausa: se calcula del estado, igual en todas las pantallas
@@ -701,7 +703,7 @@ function frame(now) {
 
 // conexión con el servidor de sincronización (solo cuando la página se sirve desde Cloudflare)
 function connectSync() {
-  if (INL || !/^https?:$/.test(location.protocol) || /claude|localhost|127\.0\.0\.1/.test(location.hostname) && !new URLSearchParams(location.search).has("sync")) return;
+  if (PUBLICO || INL || !/^https?:$/.test(location.protocol) || /claude|localhost|127\.0\.0\.1/.test(location.hostname) && !new URLSearchParams(location.search).has("sync")) return;
   const url = (location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/sync";
   try { sock = new WebSocket(url); } catch (e) { return; }
   let pingT = 0;

@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="es">
+<head>
+<base href="../">
+<meta charset="utf-8">
+<title>Recorrido del Papa en vivo</title>
+<style>
+@font-face{font-family:"Playfair Display";font-weight:700;font-style:normal;font-display:block;src:url(fuentes/playfair-display-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"Playfair Display";font-weight:900;font-style:normal;font-display:block;src:url(fuentes/playfair-display-latin-900-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:400;font-style:normal;font-display:block;src:url(fuentes/inter-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:600;font-style:normal;font-display:block;src:url(fuentes/inter-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:700;font-style:normal;font-display:block;src:url(fuentes/inter-latin-700-normal.woff2) format("woff2")}
+
+:root{--gold:#A3863E;--gold-soft:#E4D8B8;--ink:#1D1B18;--text:#24221F;--mute:#8C877D;--paper:#FFFFFF;--land:#DCDBD7;--land2:#EEEDEA;
+  --serif:"Playfair Display",Georgia,serif;--sans:"Inter",Arial,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--paper)}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;background:var(--paper);overflow:hidden}
+#street,#countrywrap{position:absolute;left:0;top:0;width:1160px;height:1080px;transition:opacity .9s ease}
+#countrywrap{background:var(--paper)}
+#country,#cov{position:absolute;left:0;top:0;width:1160px;height:1080px}
+#country .nb{fill:var(--land2);stroke:#fff;stroke-width:1.2;vector-effect:non-scaling-stroke}
+#country .dp{fill:var(--land);stroke:#fff;stroke-width:1.1;vector-effect:non-scaling-stroke;transition:fill .9s}
+#country .dp.tour{fill:var(--gold-soft)}
+#country .dp.on{fill:var(--gold)}
+#country .pe{fill:none;stroke:#A9A59B;stroke-width:1.4;vector-effect:non-scaling-stroke}
+#cov text{font-family:var(--serif);font-weight:700;letter-spacing:.08em}
+#cov .cty{fill:#B3AFA6;font-size:15px;font-family:var(--sans);font-weight:600;letter-spacing:.32em}
+#cov .lbl{fill:var(--ink);paint-order:stroke;stroke:#fff;stroke-width:6px;stroke-linejoin:round}
+#cov .lbl.cur{fill:#fff;stroke:none}
+#cov .tag{font-family:var(--sans);font-weight:700;fill:var(--gold);letter-spacing:.04em}
+#panel{position:absolute;left:1160px;top:0;width:760px;height:1080px;padding:70px 72px 0 64px;border-left:1px solid #E7E3DA;background:var(--paper)}
+.kick{font:600 15px/1 var(--sans);letter-spacing:.24em;color:var(--mute);text-transform:uppercase}
+#clock{position:absolute;right:72px;top:70px;font:600 15px/1 var(--sans);letter-spacing:.12em;color:var(--gold)}
+.rule{height:2px;width:72px;background:var(--gold);margin:22px 0 0}
+#body{position:absolute;left:64px;right:72px;top:150px;bottom:150px;transition:opacity .35s ease,transform .35s ease}
+#body.out{opacity:0;transform:translateY(-14px)}
+#body.pre{opacity:0;transform:translateY(18px);transition:none}
+.dayhead{display:flex;align-items:flex-start;gap:42px}
+.dname{font:700 30px/1 var(--serif);letter-spacing:.06em;color:var(--gold)}
+.dnum{font:900 156px/0.92 var(--serif);color:var(--gold);margin-top:6px}
+.dense .dnum{font-size:104px}
+.dense .dname{font-size:26px}
+.dense .city{font-size:32px;padding:16px 28px 14px}
+.dense .ev.leg:not(.now) .lv{display:none}
+.dense .ev.leg{font-size:19px}
+.xdense .dnum{font-size:88px}
+.xdense .evs{margin-top:22px}
+.xdense .ev{font-size:20px;margin-bottom:10px}
+.xdense .ev.leg{font-size:17px}
+.xdense .ev.leg .lv{font-size:15px}
+.city{display:inline-block;background:var(--ink);color:#fff;font:700 38px/1 var(--serif);letter-spacing:.04em;padding:20px 34px 18px;margin-top:4px;max-width:420px}
+.evs{position:relative;margin-top:46px;padding-left:46px}
+.dense .evs{margin-top:28px}
+.evs:before{content:"";position:absolute;left:9px;top:12px;bottom:12px;width:2px;background:var(--gold);opacity:.55}
+.ev{position:relative;font:400 27px/1.36 var(--sans);color:var(--text);margin-bottom:22px;transition:opacity .5s,color .5s}
+.dense .ev{font-size:22px;margin-bottom:13px}
+.ev b{font-weight:700}
+.ev:before{content:"";position:absolute;left:-46px;top:9px;width:16px;height:16px;border:3px solid var(--gold);border-radius:50%;background:#fff;transition:background .4s,transform .4s}
+.ev.past{opacity:.36}
+.ev.past:before{background:var(--gold)}
+.ev.now{color:var(--ink)}
+.ev.now:before{background:var(--gold);transform:scale(1.35);box-shadow:0 0 0 7px rgba(163,134,62,.18)}
+.ev.now .nowtag{display:block}
+.nowtag{display:none;font:700 14px/1 var(--sans);letter-spacing:.22em;color:var(--gold);margin-bottom:8px}
+.ev.next{opacity:.9}
+.ev.leg{font-size:21px;color:var(--mute)}
+.ev.leg:before{width:10px;height:10px;left:-43px;top:10px;border-width:2px;border-radius:0;transform:rotate(45deg)}
+.ev.leg.now:before{transform:rotate(45deg) scale(1.4)}
+.ev.leg .lt{font-weight:600;color:inherit}
+.ev.leg .lv{font-size:17px;letter-spacing:.02em;margin-top:2px}
+.ev.leg .lp{display:none;margin-top:12px}
+.ev.leg.now{color:var(--ink)}
+.ev.leg.now .lp{display:block}
+.bar{height:6px;background:#EEE9DD;position:relative}
+.bar i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--gold)}
+.lx{font:600 17px/1.5 var(--sans);color:var(--gold);margin-top:10px}
+.lx .cal{color:var(--ink);font-weight:600}
+.ovt{font:900 64px/1.05 var(--serif);color:var(--ink);margin-top:6px}
+.ovsub{font:400 24px/1.4 var(--sans);color:var(--mute);margin-top:18px}
+.ovl{margin-top:44px}
+.ovr{display:flex;align-items:baseline;gap:26px;padding:15px 0;border-bottom:1px solid #EEEAE1}
+.ovr .n{font:900 48px/1 var(--serif);color:var(--gold);width:72px}
+.ovr .d{font:700 16px/1 var(--sans);letter-spacing:.2em;color:var(--mute);width:140px}
+.ovr .c{font:700 26px/1.2 var(--serif);color:var(--ink);letter-spacing:.03em}
+#strip{position:absolute;left:64px;right:72px;bottom:58px;display:flex;justify-content:space-between;border-top:1px solid #E7E3DA;padding-top:20px}
+.sd{text-align:center;width:16%;cursor:pointer;user-select:none;color:#B9B4AA;transition:color .5s}
+.sd .a{font:700 13px/1 var(--sans);letter-spacing:.2em}
+.sd .b{font:900 32px/1.2 var(--serif)}
+.sd .u{height:3px;width:34px;margin:6px auto 0;background:transparent;transition:background .5s}
+.sd.done{color:#8C877D}
+.sd.cur{color:var(--gold)}
+.sd.cur .u{background:var(--gold)}
+#help{position:absolute;right:24px;top:24px;background:rgba(29,27,24,.94);color:#fff;font:400 18px/1.6 var(--sans);padding:22px 28px;display:none;z-index:5}
+#help b{color:var(--gold-soft)}
+#speed{position:absolute;right:72px;top:96px;font:600 13px/1 var(--sans);letter-spacing:.08em;color:var(--mute);opacity:0;transition:opacity .4s}
+#speed.on{opacity:1}
+/* carátula y créditos: ocupan toda la pantalla */
+
+#card{position:absolute;left:0;top:0;width:1920px;height:1080px;background:var(--paper);z-index:6;opacity:0;pointer-events:none;transition:opacity .7s ease}
+#card.on{opacity:1}
+#card .cc{position:absolute;inset:0;opacity:0;transform:translateY(16px);transition:opacity .6s ease .15s,transform .6s ease .15s}
+#card.on .cc.show{opacity:1;transform:none}
+#card svg{position:absolute;left:1040px;top:70px;width:820px;height:940px}
+#card .nb{fill:var(--land2);stroke:#fff;stroke-width:1}
+#card .dp{fill:var(--land);stroke:#fff;stroke-width:.8}
+#card .dp.tour{fill:var(--gold-soft)}
+#card .pe{fill:none;stroke:#A9A59B;stroke-width:1.2}
+#card .tx{position:absolute;left:150px;top:0;bottom:0;width:860px;display:flex;flex-direction:column;justify-content:center}
+#card .k{font:600 18px/1 var(--sans);letter-spacing:.26em;color:var(--mute);text-transform:uppercase}
+#card .t{font:900 118px/1.02 var(--serif);color:var(--ink);margin-top:34px}
+#card .u{height:4px;width:120px;background:var(--gold);margin-top:44px}
+#card .s{font:700 34px/1.2 var(--serif);color:var(--gold);margin-top:34px;letter-spacing:.02em}
+#card .b{font:400 30px/1.35 var(--sans);color:var(--text);margin-top:30px;max-width:780px}
+#card .nav{margin-top:110px}
+#card .kl b.ar{font:700 22px/1 Arial,sans-serif;padding:1px 9px 3px}
+#card .kl{display:grid;grid-template-columns:1fr;justify-content:start;gap:12px 48px;margin-top:20px;font:400 21px/1.3 var(--sans);color:var(--text)}
+#card .kl b{font-weight:700;color:var(--ink);background:#F1EEE7;border:1px solid #E2DDD2;border-radius:6px;padding:2px 9px;font-size:.9em}
+#card .cr h3{font:600 17px/1 var(--sans);letter-spacing:.24em;color:var(--mute);text-transform:uppercase;margin:52px 0 0}
+#card .cr h3:first-of-type{margin-top:56px}
+#card .cr p{font:700 46px/1.25 var(--serif);color:var(--ink);margin:16px 0 0}
+#card .cr p.l{font-size:40px;margin-top:10px}
+/* botones ‹ › */
+#nav{position:absolute;left:1004px;top:992px;display:flex;gap:12px;z-index:7}
+#nav button{width:64px;height:64px;border-radius:50%;border:1px solid #E2DDD2;background:rgba(255,255,255,.92);color:var(--ink);font:400 44px/1 Georgia,serif;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.08);padding-bottom:6px}
+#nav button:hover{background:#fff;color:var(--gold)}
+#card .go{margin-top:40px;font:600 20px/1 var(--sans);letter-spacing:.06em;color:var(--gold)}
+#card{cursor:pointer}
+/* formato vertical (1080×1920, celular): mapa arriba, panel abajo, todo más grande */
+body.vert #panel{left:0;top:960px;width:1080px;height:960px;padding:40px 56px 0;border-left:0;border-top:1px solid #E7E3DA}
+body.vert .kick,body.vert #clock{font-size:22px}
+body.vert #clock{top:40px;right:56px}
+body.vert #speed{top:72px;right:56px;font-size:20px}
+body.vert #body{left:56px;right:56px;top:104px;bottom:170px}
+body.vert .dayhead,body.vert .dense .dayhead{gap:34px;align-items:center}
+body.vert .dname,body.vert .dense .dname{font-size:38px}
+body.vert .dnum,body.vert .dense .dnum,body.vert .xdense .dnum{font-size:110px}
+body.vert .city,body.vert .dense .city{max-width:none;font-size:44px;padding:20px 30px 18px}
+body.vert .cnt{font:700 22px/1 var(--sans);letter-spacing:.14em;color:var(--mute);margin-top:22px}
+body.vert .evs,body.vert .dense .evs,body.vert .xdense .evs{margin-top:28px;padding-left:62px}
+body.vert .evs:before{left:12px}
+body.vert .ev,body.vert .dense .ev,body.vert .xdense .ev{font-size:40px;line-height:1.25;margin-bottom:24px}
+body.vert .ev.leg:not(.now) .lv{display:none}
+body.vert .ev.far{display:none}
+body.vert .ev:before,body.vert .dense .ev:before{left:-62px;top:12px;width:24px;height:24px;border-width:4px}
+body.vert .ev.leg,body.vert .dense .ev.leg,body.vert .xdense .ev.leg{font-size:34px}
+body.vert .ev.leg:before{width:16px;height:16px;left:-58px;top:14px}
+body.vert .ev.leg .lv,body.vert .xdense .ev.leg .lv{font-size:25px;margin-top:4px}
+body.vert .nowtag{font-size:20px;margin-bottom:10px}
+body.vert .bar{height:9px}
+body.vert .lx{font-size:27px}
+body.vert .ovt{font-size:62px}
+body.vert .ovsub{font-size:28px;margin-top:10px}
+body.vert .ovl{margin-top:18px}
+body.vert .ovr{padding:9px 0}
+body.vert .ovr .n{font-size:50px;width:84px}
+body.vert .ovr .d{font-size:20px;width:180px}
+body.vert .ovr .c{font-size:34px}
+body.vert #strip{left:32px;right:32px;bottom:26px;padding-top:18px}
+body.vert .sd .a{font-size:22px;letter-spacing:.1em}
+body.vert .sd .b{font-size:58px}
+body.vert .sd .u{width:52px;height:4px}
+body.vert #nav{left:auto;top:auto;bottom:984px;right:28px;gap:18px}
+body.vert #nav button{width:104px;height:104px;font-size:72px;padding-bottom:10px}
+body.vert #help{left:24px;right:24px}
+body.vert #card{width:1080px;height:1920px}
+body.vert #card svg{left:170px;top:1080px;width:740px;height:780px}
+body.vert #card .tx{left:84px;right:84px;width:auto;top:120px;bottom:auto;display:block}
+body.vert #card .t{font-size:112px}
+body.vert #card .b{font-size:40px}
+body.vert #card .s{font-size:40px}
+body.vert #card .nav{margin-top:60px}
+body.vert #card .k{font-size:22px}
+body.vert #card .kl{grid-template-columns:1fr;gap:16px;font-size:34px}
+body.vert #card .kl b{font-size:1em}
+body.vert #card .go{font-size:34px;margin-top:44px}
+body.vert #card [data-c="cred"] .tx{top:140px}
+body.vert #card .cr h3{font-size:24px}
+body.vert #card .cr p{font-size:60px}
+body.vert #card .cr p.l{font-size:54px}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="street" width="1160" height="1080"></canvas>
+  <div id="fade" style="position:absolute;left:0;top:0;width:1160px;height:1080px;background:#EEEBE5;opacity:0;pointer-events:none"></div>
+  <div id="countrywrap"><svg id="country" viewBox="0 0 1160 1080" preserveAspectRatio="xMidYMid slice"><g id="cg"></g></svg><svg id="cov" width="1160" height="1080"></svg><canvas id="planecv" width="1160" height="1080" style="position:absolute;left:0;top:0;width:1160px;height:1080px;pointer-events:none"></canvas></div>
+  <div id="panel">
+    <div class="kick" id="kick"></div><div id="clock"></div><div id="speed"></div>
+    <div class="rule"></div>
+    <div id="body"></div>
+    <div id="strip"></div>
+  </div>
+  <div id="card"></div>
+  <div id="help">
+    <b>→ / Espacio / AvPág</b> siguiente (en una actividad: inicia el traslado o el vuelo; durante el trayecto: llega)<br>
+    <b>← / RePág</b> paso anterior<br>
+    <b>P</b> pausa o reanuda el traslado · <b>+ / −</b> velocidad (×0,5 a ×10; ahora <span id="hspeed">×1</span>) · <b>N</b> velocidad normal<br>
+    <b>1 – 6</b> primer paso de cada día · <b>0 / Inicio</b> carátula<br>
+    <b>F</b> o doble clic: pantalla completa · <b>V</b> cambiar vertical / horizontal · <b>H</b> esta ayuda
+  </div>
+</div>
+<script>window.__PUBLICO__ = true;</script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

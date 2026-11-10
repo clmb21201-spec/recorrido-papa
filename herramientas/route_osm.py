@@ -18,14 +18,14 @@ V = {k: (v["lat"], v["lon"]) for k, v in _AG["lugares"].items()}
 # "auto": tramo en auto cerrado (se ve la camioneta); si no, papamóvil
 LEGS = {
  "w1": {"ciudad": "lima", "auto": True,
-        "pts": ["base_callao", (-12.05355, -77.09807), (-12.0744, -77.09942), (-12.07776, -77.08889), (-12.07777, -77.08288), (-12.07354, -77.06253),
+        "pts": [(-12.0106, -77.1110), (-12.05355, -77.09807), (-12.0744, -77.09942), (-12.07776, -77.08889), (-12.07777, -77.08288), (-12.07354, -77.06253),
                 (-12.08935, -77.06954), (-12.09096, -77.06476), (-12.0884, -77.06464), (-12.06322, -77.04416), (-12.0610, -77.0424)],
         "por": ["Avenida Elmer Faucett", "Avenida de La Marina", "Avenida Antonio José de Sucre", "Avenida Javier Prado Oeste", "Avenida Brasil"],
         "fuente": "Monseñor Guillermo Inca (Conferencia Episcopal, 9 nov.) y general Víctor Meza (PNP): Faucett, La Marina, Sucre, Javier Prado y Brasil"},
  "w2": {"ciudad": "lima",
         "pts": [(-12.0610, -77.0424), (-12.0600, -77.0421), (-12.0582, -77.0416), (-12.05623, -77.04191), (-12.05596, -77.03891), (-12.05489, -77.03824), (-12.0483, -77.0388),
                 (-12.0455, -77.0368), (-12.0426, -77.0349), (-12.0436, -77.0332), (-12.04517, -77.0307), (-12.04613, -77.03136), (-12.0467, -77.03041),
-                (-12.04578, -77.02976), (-12.0455, -77.0302)],
+                (-12.04578, -77.02976), (-12.0453, -77.03051)],
         "por": ["Avenida Brasil", "Avenida Bolivia", "Avenida Garcilaso de la Vega", "Avenida Tacna", "Jirón Conde de Superunda",
                 "Jirón de la Unión", "Jirón Huallaga", "Jirón Carabaya", "Jirón Junín"],
         "fuente": "Mapa oficial de la Conferencia Episcopal (9 nov.): Brasil, Plaza Bolognesi, Bolivia, Garcilaso de la Vega, Conde de Superunda; vuelta a la Plaza"},

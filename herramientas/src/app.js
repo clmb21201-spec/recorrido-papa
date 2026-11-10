@@ -59,7 +59,11 @@ const BASE = AG.velocidad_base || 1, VUELO_SEG = AG.vuelo_seg || 0, PAUSA_SEG = 
 // ya llegó (vuelo o recorrido) y está en la pausa: se calcula del estado, igual en todas las pantallas
 const arrived = () => { const s = STEPS[st.step]; return moving(s) && progMs() >= legMs(); };
 const rate = () => { const s = STEPS[st.step]; if (st.paused) return 0; return s.kind === "air" && VUELO_SEG ? st.speed : st.speed * BASE * (st.demo ? 30 : 1); };
-function legMs() { const s = STEPS[st.step]; if (s.kind === "air" && VUELO_SEG) return VUELO_SEG * 1000; return (s.kind === "air" ? s.min : (DURACION_MIN[s.leg] || 20)) * 60000; }
+// en la vista acelerada (velocidad_base > 1) ningún recorrido va más rápido que vel_pantalla_max metros por segundo en pantalla;
+// en tiempo real (velocidad_base 1) manda la duración de la agenda
+const VMAX = AG.vel_pantalla_max || 0;
+function legMs() { const s = STEPS[st.step]; if (s.kind === "air" && VUELO_SEG) return VUELO_SEG * 1000; if (s.kind === "air") return s.min * 60000;
+  const ms = (DURACION_MIN[s.leg] || 20) * 60000; return VMAX && BASE > 1 && ROUTE[s.leg] ? Math.max(ms, ROUTE[s.leg].L / VMAX * BASE * 1000) : ms; }
 function legFrac() { const u = Math.max(0, Math.min(1, Math.max(0, progMs()) / legMs())), ea = .04, v = 1 / (1 - ea);   // arranque y llegada suaves
   return u < ea ? v * u * u / (2 * ea) : u > 1 - ea ? 1 - v * (1 - u) * (1 - u) / (2 * ea) : v * (u - ea / 2); }
 function progMs(now = clock()) { return st.base + (now - st.t0) * rate(); }
@@ -377,7 +381,7 @@ const papaReady = new Promise(res => {
     m.scale.setScalar(PAPA_H / sz.z);
     const b2 = new THREE.Box3().setFromObject(m); m.position.z = -b2.min.z;
     m.traverse(o => { if (o.isMesh) { o.renderOrder = 200; o.material.depthTest = true; } });
-    const sh = shadow.clone(); sh.scale.set(.8, .55, 1); papa.add(sh, m); res();
+    const sh = shadow.clone(); sh.material = shadow.material.clone(); sh.scale.set(.8, .55, 1); papa.add(sh, m); res();
   }, () => res());
 });
 const CAR_LEN = 42;
@@ -395,6 +399,19 @@ const loadVeh = (bin, holderParent, len) => new Promise(res => {
   }, () => res());
 });
 const carReady = Promise.all([loadVeh(CAR_BIN, CARV.papa, CAR_LEN), loadVeh(SUV_BIN, CARV.auto, CAR_LEN * 1.05)]);
+
+// aparición suave: a (0..1) va hacia 1 o 0 en ~0,5 s; escala con un pequeño rebote y opacidad
+const POP_S = .5;
+function pop(obj, on, dt) {
+  const u = obj.userData;
+  if (u.a == null) u.a = on ? 1 : 0;
+  u.a = Math.max(0, Math.min(1, u.a + (on ? 1 : -1) * dt / POP_S));
+  const a = u.a, e = on ? 1 + 2.2 * Math.pow(a - 1, 3) + 1.2 * Math.pow(a - 1, 2) : a * a * (3 - 2 * a);   // entra con rebote, sale suave
+  obj.visible = a > .01; obj.scale.setScalar(.35 + .65 * e);
+  if (!u.mats) { u.mats = []; obj.traverse(o => { if (o.isMesh && o.material !== shadow.material) { o.material.transparent = true; u.mats.push([o.material, o.material.opacity]); } }); if (!u.mats.length) u.mats = null; }
+  if (u.mats) u.mats.forEach(([m, o0]) => m.opacity = o0 * a);
+  return a;
+}
 
 // pose de la cámara
 const FRONT_YAW = THREE.MathUtils.degToRad(28), BACK = 430, HGT = 330;
@@ -428,8 +445,12 @@ function streetDraw(now) {
   for (const c in CG) CG[c].visible = c === s.c3;
   carH = unwrapTo(S.h, carH) * .25 + carH * .75;
   car.position.set(S.x, S.y, 0); car.rotation.z = carH + Math.PI / 2;
-  car.visible = S.moving; papa.visible = !S.moving;
-  const useAuto = s.kind === "leg" && s.auto && CARV.auto.children.length > 0; CARV.auto.visible = useAuto; CARV.papa.visible = !useAuto;
+  // cambio de vehículo o de figura: aparecen y desaparecen con escala y fundido
+  const useAuto = s.kind === "leg" && s.auto && CARV.auto.children.length > 0;
+  car.visible = true;
+  const aA = pop(CARV.auto, S.moving && useAuto, dt), aP = pop(CARV.papa, S.moving && !useAuto, dt);
+  shadow.material.opacity = Math.max(aA, aP); shadow.visible = shadow.material.opacity > .01;
+  pop(papa, !S.moving, dt);
   if (!S.moving) { const v = VP[s.at]; if (v) { S.x = v.x; S.y = v.y; } papa.position.set(S.x, S.y, 0); }
   // tramos: recorridos, actual y siguiente planificado
   const day = s.di;

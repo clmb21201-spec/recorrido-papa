@@ -1,5 +1,24 @@
 {
  "titulo": "Visita del Papa al Perú",
+ "caratula": "Las rutas del Papa en Perú",
+ "medio": "Diario El Comercio",
+ "creditos": [
+  {
+   "rol": "Animación y desarrollo web",
+   "nombres": [
+    "Carls Mayo"
+   ]
+  },
+  {
+   "rol": "Investigación",
+   "nombres": [
+    "Guisella Veramendi",
+    "Tito Martel",
+    "Mayyi Mirabal",
+    "Yanina Arana"
+   ]
+  }
+ ],
  "velocidad_base": 30,
  "vuelo_seg": 5,
  "pausa_llegada_seg": 3,

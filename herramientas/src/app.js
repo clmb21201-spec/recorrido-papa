@@ -31,19 +31,21 @@ const GOLD = "#A3863E", INK = "#1D1B18";
 const $ = id => document.getElementById(id);
 
 /* ======================= pasos ======================= */
-const STEPS = [{ kind: "ov" }];
+// la carátula y los créditos son pasos de vista general (mapa del Perú detrás) con una lámina encima
+const STEPS = [{ kind: "ov", card: "cover" }, { kind: "ov" }];
 DIAS.forEach((d, di) => d.items.forEach((it, ii) => {
   if (it.tramo) STEPS.push({ kind: "leg", di, ii, leg: it.tramo, to: it.a, fin: it.fin || null, auto: !!(TRAMOS[it.tramo] && TRAMOS[it.tramo].auto) });
   else if (it.vuelo) STEPS.push({ kind: "air", di, ii, from: it.de, to: it.a, min: it.min || 60, heli: it.vehiculo === "helicoptero" });
   else STEPS.push({ kind: "ev", di, ii, at: it.lugar || null, city: paisDe(it), c3: it.lugar && LUGARES[it.lugar] ? LUGARES[it.lugar].ciudad : null });
 }));
+STEPS.push({ kind: "ov", card: "cred" });
 const LAST = STEPS.length - 1;
 STEPS.forEach(s => { if (s.kind === "leg") s.c3 = cityOfLeg(s.leg); s.mode = s.kind === "leg" || (s.kind === "ev" && s.c3 && CITIES[s.c3]) ? "street" : "country"; });
 const cityOf = s => s.kind === "ov" ? null : s.kind === "leg" ? PAIS_CIU[s.c3] || "LIMA" : s.kind === "air" ? (arrived() && !INTL.has(s.to) ? s.to : null) : s.city;
 const moving = s => s.kind === "leg" || s.kind === "air";
 
 /* ======================= estado y tiempo ======================= */
-let st = { step: 0, base: 0, t0: 0, speed: 1, paused: false, demo: false };
+let st = { step: 0, base: 0, t0: 0, speed: 1, paused: false };
 // Sincronización: en la versión de Cloudflare todas las pantallas abiertas con el enlace ven y controlan lo mismo.
 // El estado es mínimo (paso, inicio, velocidad, pausa) y la hora se toma del servidor para que todas calculen igual.
 let OFFSET = 0, sock = null, sockOk = false;
@@ -58,7 +60,7 @@ function load() { try { const v = JSON.parse(localStorage.getItem("papa_live_v1"
 const BASE = AG.velocidad_base || 1, VUELO_SEG = AG.vuelo_seg || 0, PAUSA_SEG = AG.pausa_llegada_seg ?? 3;
 // ya llegó (vuelo o recorrido) y está en la pausa: se calcula del estado, igual en todas las pantallas
 const arrived = () => { const s = STEPS[st.step]; return moving(s) && progMs() >= legMs(); };
-const rate = () => { const s = STEPS[st.step]; if (st.paused) return 0; return s.kind === "air" && VUELO_SEG ? st.speed : st.speed * BASE * (st.demo ? 30 : 1); };
+const rate = () => { const s = STEPS[st.step]; if (st.paused) return 0; return s.kind === "air" && VUELO_SEG ? st.speed : st.speed * BASE; };
 // en la vista acelerada (velocidad_base > 1) ningún recorrido va más rápido que vel_pantalla_max metros por segundo en pantalla;
 // en tiempo real (velocidad_base 1) manda la duración de la agenda
 const VMAX = AG.vel_pantalla_max || 0;
@@ -538,8 +540,27 @@ function ovHTML() {
   return `<div class="ovt">Agenda de<br>la visita</div><div class="ovsub">Seis días, siete ciudades</div>
   <div class="ovl">${DIAS.map(d => `<div class="ovr"><div class="n">${d.num}</div><div class="d">${d.dia}</div><div class="c">${esc(tc(d.ciudad))}</div></div>`).join("")}</div>`;
 }
+/* carátula y créditos */
+const CARD = $("card");
+const CREDITOS = AG.creditos || [];
+CARD.innerHTML = `<svg viewBox="150 40 900 840"></svg>
+  <div class="cc" data-c="cover"><div class="tx"><div class="t">${esc(AG.caratula || TITULO)}</div><div class="u"></div>
+    <div class="s">${esc(AG.medio || "")}</div></div></div>
+  <div class="cc" data-c="cred"><div class="tx cr"><div class="k">Créditos</div>${CREDITOS.map(c => `<h3>${esc(c.rol)}</h3>${c.nombres.map((n, i) => `<p class="${c.nombres.length > 2 ? "l" : ""}">${esc(n)}</p>`).join("")}`).join("")}
+    <div class="u"></div><div class="s">${esc(AG.medio || "")}</div></div></div>`;
+{ const sv = CARD.querySelector("svg");
+  MAPPE.depts.forEach(n => add(sv, "path", { d: n.d, class: "dp" + (TOUR.has(n.name) ? " tour" : "") }));
+  add(sv, "path", { d: MAPPE.peru, class: "pe" });
+  CNAMES.forEach(n => { if (CP[n]) add(sv, "circle", { cx: CP[n][0], cy: CP[n][1], r: 7, fill: "#fff", stroke: INK, "stroke-width": 2.6 }); });
+  requestAnimationFrame(() => { try { const b = sv.querySelector(".pe").getBBox(), p = 20; sv.setAttribute("viewBox", `${b.x - p} ${b.y - p} ${b.width + 2 * p} ${b.height + 2 * p}`); } catch (e) {} }); }
+function cardPaint() {
+  const c = STEPS[st.step].card || null;
+  CARD.classList.toggle("on", !!c);
+  CARD.querySelectorAll(".cc").forEach(el => el.classList.toggle("show", el.dataset.c === c));
+}
 let curDay = null;
 function panelEnter(instant) {
+  cardPaint();
   const s = STEPS[st.step], day = s.kind === "ov" ? -1 : s.di;
   strip.querySelectorAll(".sd").forEach(el => { const i = +el.dataset.i; el.className = "sd" + (i === day ? " cur" : day >= 0 && i < day ? " done" : ""); });
   const apply = () => body.querySelectorAll(".ev").forEach(el => { const i = +el.dataset.i; el.className = "ev" + (el.classList.contains("leg") ? " leg" : "") + (i < s.ii ? " past" : i === s.ii ? " now" : i === s.ii + 1 ? " next" : ""); });
@@ -555,7 +576,6 @@ let lastPanel = 0;
 function panelTick(S) {
   const now = Date.now(); if (now - lastPanel < 250) return; lastPanel = now;
   $("clock").textContent = "Lima · " + hhmm(new Date());
-  $("demo").style.display = st.demo ? "block" : "none";
   const s = STEPS[st.step];
   if (s.kind === "air") {
     const el = body.querySelector(`.ev.leg[data-i="${s.ii}"]`); if (!el) return;
@@ -612,7 +632,6 @@ addEventListener("keydown", e => {
   else if ((k === "+" || k === "=") && moving(s)) setSpeed(+1);
   else if ((k === "-" || k === "_") && moving(s)) setSpeed(-1);
   else if ((k === "n" || k === "N") && moving(s)) setSpeed(0);
-  else if (k === "d" || k === "D") { rebase(); st.demo = !st.demo; save(); }
   else if (k === "f" || k === "F") toggleFull();
   else if (k === "h" || k === "H") { const h = $("help"); h.style.display = h.style.display === "block" ? "none" : "block"; }
   else return;
@@ -663,7 +682,7 @@ function connectSync() {
 (async () => {
   await fontsReady(); await carReady; await papaReady;
   const q = new URLSearchParams(location.search), saved = load();
-  if (q.has("paso")) { st.step = Math.max(0, Math.min(LAST, +q.get("paso"))); if (moving(STEPS[st.step])) { st.t0 = clock(); st.base = (+q.get("avance") || 0) * legMs(); } if (q.has("demo")) st.demo = true; }
+  if (q.has("paso")) { st.step = Math.max(0, Math.min(LAST, +q.get("paso"))); if (moving(STEPS[st.step])) { st.t0 = clock(); st.base = (+q.get("avance") || 0) * legMs(); } }
   else if (saved) st = saved;
   enter(st.step, true);
   $("hspeed").textContent = "×" + String(st.speed).replace(".", ",");

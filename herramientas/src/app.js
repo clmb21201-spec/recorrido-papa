@@ -26,7 +26,19 @@ const HELI_BIN = INL ? Uint8Array.from(atob(INL.heli), c => c.charCodeAt(0)).buf
   : await fetch("modelos/helicoptero.b64.txt").then(r => r.text()).then(t => Uint8Array.from(atob(t.trim()), c => c.charCodeAt(0)).buffer);
 const PAPA_BIN = INL ? Uint8Array.from(atob(INL.papa), c => c.charCodeAt(0)).buffer
   : await fetch("modelos/papa.b64.txt").then(r => r.text()).then(t => Uint8Array.from(atob(t.trim()), c => c.charCodeAt(0)).buffer);
-const MW = 1160, MH = 1080;
+// formato: horizontal 1920×1080 (mapa 1160×1080 + panel a la derecha) o vertical 1080×1920 (mapa arriba, panel abajo).
+// Se elige con ?vertical / ?horizontal, la tecla V (se recuerda en este navegador) o el valor por defecto de la versión.
+const VERT = (() => { const q = new URLSearchParams(location.search);
+  if (q.has("vertical")) return true; if (q.has("horizontal")) return false;
+  try { const v = localStorage.getItem("papa_formato"); if (v) return v === "vertical"; } catch (e) {}
+  return !!window.__VERT_DEFAULT__; })();
+const SW = VERT ? 1080 : 1920, SH = VERT ? 1920 : 1080;
+const MW = VERT ? 1080 : 1160, MH = VERT ? 1000 : 1080;
+document.body.classList.toggle("vert", VERT);
+{ const G = id => document.getElementById(id), st_ = G("stage").style; st_.width = SW + "px"; st_.height = SH + "px";
+  for (const id of ["street", "fade", "countrywrap", "country", "cov", "planecv"]) { const e = G(id); e.style.width = MW + "px"; e.style.height = MH + "px"; }
+  G("street").width = MW; G("street").height = MH; G("planecv").width = MW; G("planecv").height = MH;
+  G("cov").setAttribute("width", MW); G("cov").setAttribute("height", MH); }
 const GOLD = "#A3863E", INK = "#1D1B18";
 const $ = id => document.getElementById(id);
 
@@ -103,7 +115,7 @@ function frameFor(pts, minExt) {
   pts.forEach(n => { const [x, y] = CP[n]; x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); });
   return { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, z: MW / Math.max(minExt, (x1 - x0) * 1.6, (y1 - y0) * 1.6 * MW / MH) };
 }
-const C_OV = { cx: MW / 2, cy: MH / 2, z: 1 };
+const C_OV = { cx: 580, cy: 540, z: Math.min(MW / 1160, MH / 1080) };   // el mapa del Perú está dibujado en 1160×1080
 const DAYCAM = DIAS.map(d => { const ps = [...new Set(d.items.filter(i => !i.tramo && !i.vuelo).map(paisDe))]; return frameFor(ps, ps.length > 1 ? 300 : 340); });
 function airCam(s) { return !INTL.has(s.from) && !INTL.has(s.to) ? frameFor([s.from, s.to], 300) : DAYCAM[s.di]; }
 let ccam = { ...C_OV }, cfrom = ccam, cto = ccam, ct0 = 0, cdur = 1;
@@ -636,6 +648,7 @@ addEventListener("keydown", e => {
   else if ((k === "-" || k === "_") && moving(s)) setSpeed(-1);
   else if ((k === "n" || k === "N") && moving(s)) setSpeed(0);
   else if (k === "f" || k === "F") toggleFull();
+  else if (k === "v" || k === "V") { try { localStorage.setItem("papa_formato", VERT ? "horizontal" : "vertical"); } catch (e) {} location.reload(); }
   else if (k === "h" || k === "H") { const h = $("help"); h.style.display = h.style.display === "block" ? "none" : "block"; }
   else return;
   e.preventDefault();
@@ -643,7 +656,7 @@ addEventListener("keydown", e => {
 // pantalla completa (sin la interfaz alrededor): tecla F o doble clic
 function toggleFull() { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); } catch (e) {} }
 addEventListener("dblclick", toggleFull);
-function fit() { const k = Math.min(innerWidth / 1920, innerHeight / 1080); $("stage").style.transform = `translate(${(innerWidth - 1920 * k) / 2}px, ${(innerHeight - 1080 * k) / 2}px) scale(${k})`; }
+function fit() { const k = Math.min(innerWidth / SW, innerHeight / SH); $("stage").style.transform = `translate(${(innerWidth - SW * k) / 2}px, ${(innerHeight - SH * k) / 2}px) scale(${k})`; }
 addEventListener("resize", fit); fit();
 
 function frame(now) {

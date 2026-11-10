@@ -18,7 +18,8 @@ V = {k: (v["lat"], v["lon"]) for k, v in _AG["lugares"].items()}
 # "auto": tramo en auto cerrado (se ve la camioneta); si no, papamóvil
 LEGS = {
  "w1": {"ciudad": "lima", "auto": True,
-        "pts": [(-12.0106, -77.1110), (-12.05355, -77.09807), (-12.0744, -77.09942), (-12.07776, -77.08889), (-12.07777, -77.08288), (-12.07354, -77.06253),
+        "pre": [(-12.0106, -77.1158), (-12.0109, -77.1146), (-12.01054, -77.11322), (-12.0106, -77.11245), (-12.0106, -77.1114)],   # dentro de la base: de la plataforma a la Av. Faucett
+        "pts": [(-12.0106, -77.1112), (-12.05355, -77.09807), (-12.0744, -77.09942), (-12.07776, -77.08889), (-12.07777, -77.08288), (-12.07354, -77.06253),
                 (-12.08935, -77.06954), (-12.09096, -77.06476), (-12.0884, -77.06464), (-12.06322, -77.04416), (-12.0610, -77.0424)],
         "por": ["Avenida Elmer Faucett", "Avenida de La Marina", "Avenida Antonio José de Sucre", "Avenida Javier Prado Oeste", "Avenida Brasil"],
         "fuente": "Monseñor Guillermo Inca (Conferencia Episcopal, 9 nov.) y general Víctor Meza (PNP): Faucett, La Marina, Sucre, Javier Prado y Brasil"},
@@ -110,6 +111,7 @@ for k, L in LEGS.items():
             del path[i + 1:j + 1]; del names[i:j]
         i += 1
     pts = [coords[n] for n in path]
+    if L.get("pre"): pts = list(L["pre"]) + pts; names = [""] * len(L["pre"]) + names   # tramo a mano (calles internas sin datos públicos)
     segs = []
     for (a, b), nm in zip(zip(pts, pts[1:]), names):
         d = math.hypot((b[1] - a[1]) * 108900, (b[0] - a[0]) * 110540)

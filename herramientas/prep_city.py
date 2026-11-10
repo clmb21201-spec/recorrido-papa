@@ -33,7 +33,7 @@ clip = box(x0 - 300, y0 - 300, x1 + 300, y1 + 300)
 
 W = {"motorway": 18, "trunk": 16, "primary": 14, "secondary": 12, "tertiary": 10, "residential": 6.5,
      "unclassified": 6.5, "living_street": 5.5, "pedestrian": 5, "service": 3.5}
-roads = {"major": [], "minor": []}; bld, park, water, coast = [], [], [], []
+roads = {"major": [], "minor": []}; bld, park, water, coast, air = [], [], [], [], []
 named = {}
 for o in osmium.FileProcessor(PBF).with_locations():
     if not o.is_way(): continue
@@ -41,6 +41,13 @@ for o in osmium.FileProcessor(PBF).with_locations():
     try: pts = [P(n.location.lon, n.location.lat) for n in o.nodes if n.location.valid()]
     except Exception: continue
     if len(pts) < 2: continue
+    aw = t.get("aeroway")
+    if aw in ("runway", "taxiway") and pc.intersects(LineString(pts)):   # pistas y calles de rodaje
+        air.append(LineString(pts).buffer(22 if aw == "runway" else 11, cap_style=2)); continue
+    if aw == "apron" and o.nodes[0].ref == o.nodes[-1].ref and len(pts) >= 4:   # plataformas
+        g = Polygon(pts).buffer(0)
+        if pc.intersects(g): air.append(g)
+        continue
     hw = t.get("highway")
     if hw:
         base = hw.replace("_link", "")
@@ -94,7 +101,7 @@ def mesh(geoms, region, simp=0.6):
 
 reg = corr.buffer(200)
 layers = {
-    "sea": mesh(sea, clip, 2), "water": mesh(water, reg, 1), "park": mesh(park, reg, 1),
+    "sea": mesh(sea, clip, 2), "water": mesh(water, reg, 1), "park": mesh(park, reg, 1), "air": mesh(air, reg, 1) if air else {"v": [], "i": []},
     "bld": mesh(bld, corr_b, 0.6), "minor": mesh(roads["minor"], reg, 0.5), "major": mesh(roads["major"], reg, 0.5),
 }
 for k, v in layers.items(): print(k, len(v["v"]) // 2, "vértices")

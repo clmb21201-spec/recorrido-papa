@@ -243,7 +243,7 @@ function layerMesh(L, hex, parent) {
   geo.setAttribute("position", new THREE.BufferAttribute(pos, 3)); geo.setIndex(L.i);
   const m = new THREE.Mesh(geo, flatMat(hex)); m.renderOrder = ro++; m.frustumCulled = false; parent.add(m); return m;
 }
-const LCOL = { sea: "#A8CBE0", water: "#A8CBE0", park: "#DCE5CF", bld: "#DED9D0", minor: "#FFFFFF", major: "#FFFFFF" };
+const LCOL = { sea: "#A8CBE0", water: "#A8CBE0", park: "#DCE5CF", air: "#D9D6D0", bld: "#DED9D0", minor: "#FFFFFF", major: "#FFFFFF" };
 const CG = {};   // un grupo por ciudad; solo se ve el de la ciudad actual
 const ro0 = ro;
 for (const c in CITIES) {
@@ -251,7 +251,7 @@ for (const c in CITIES) {
   const g = CG[c] = new THREE.Group(); g.visible = false; scene.add(g); ro = ro0;
   const b = CITIES[c].bounds, gp = new THREE.Mesh(new THREE.PlaneGeometry(b[2] - b[0] + 60000, b[3] - b[1] + 60000), flatMat("#EEEBE5"));
   gp.position.set((b[0] + b[2]) / 2, (b[1] + b[3]) / 2, 0); gp.renderOrder = ro++; g.add(gp);
-  ["sea", "water", "park", "bld", "minor", "major"].forEach(k => layerMesh(CITIES[c].layers[k], LCOL[k], g));
+  ["sea", "water", "park", "air", "bld", "minor", "major"].forEach(k => { if (CITIES[c].layers[k]) layerMesh(CITIES[c].layers[k], LCOL[k], g); });
 }
 
 // trayectos: suavizado y remuestreo cada 3 m

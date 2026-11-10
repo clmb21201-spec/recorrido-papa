@@ -44,7 +44,11 @@ inl = {"agenda": D("agenda.json"), "peru": D("peru.json"), "ciudades": CIUDADES,
        "papa": open(os.path.join(WEB, "modelos", "papa.b64.txt")).read().strip(),
        "heli": open(os.path.join(WEB, "modelos", "helicoptero.b64.txt")).read().strip(),
        "suv": open(os.path.join(WEB, "modelos", "camioneta.b64.txt")).read().strip()}
-off = tpl.replace("/*__FONTS__*/", css(True)).replace("<!--__DATA__-->", "<script>window.__INLINE__=" + json.dumps(inl, ensure_ascii=False, separators=(",", ":")) + ";</script>")
+# los mapas y la agenda van comprimidos (gzip + base64); la página los descomprime al abrir. Los modelos ya están comprimidos.
+import gzip, base64
+datos = {k: inl.pop(k) for k in ("agenda", "peru", "ciudades", "rutas")}
+gz = base64.b64encode(gzip.compress(json.dumps(datos, ensure_ascii=False, separators=(",", ":")).encode("utf-8"), 9)).decode()
+off = tpl.replace("/*__FONTS__*/", css(True)).replace("<!--__DATA__-->", "<script>window.__INLINE__=" + json.dumps(inl, separators=(",", ":")) + ';window.__INLINE_GZ__="' + gz + '";</script>')
 off = off.replace('<script type="module" src="app.js"></script>', '<script type="module">' + app.replace("</script", "<\\/script") + "</script>")
 open(os.path.join(DIST, "recorrido_papa_offline.html"), "w", encoding="utf-8").write(off)
 # versiones offline con formato fijo

@@ -26,7 +26,7 @@ venues = {k: P(v[1], v[0]) for k, v in VEN.items()}
 allr = unary_union(list(legs.values())) if legs else unary_union([Point(p) for p in venues.values()]).buffer(1)
 vpts = unary_union([Point(p) for p in venues.values()])
 corr = unary_union([allr.buffer(1100), vpts.buffer(900)]).simplify(20)
-corr_b = unary_union([allr.buffer(480), vpts.buffer(450)])
+corr_b = unary_union([allr.buffer(320), vpts.buffer(320)])   # edificios solo cerca de rutas y lugares
 pc, pcb = prep(corr), prep(corr_b)
 x0, y0, x1, y1 = corr.bounds
 clip = box(x0 - 300, y0 - 300, x1 + 300, y1 + 300)
@@ -96,13 +96,13 @@ def mesh(geoms, region, simp=0.6):
         verts = np.vstack(rings); ends = np.cumsum([len(r) for r in rings]).astype(np.uint32)
         tri = earcut.triangulate_float64(verts, ends)
         base = len(V) // 2
-        V.extend(np.round(verts, 1).ravel().tolist()); I.extend((tri + base).tolist())
+        V.extend(np.round(verts).astype(int).ravel().tolist()); I.extend((tri + base).tolist())   # precisión de 1 m (la cámara nunca se acerca más)
     return {"v": V, "i": I}
 
 reg = corr.buffer(200)
 layers = {
     "sea": mesh(sea, clip, 2), "water": mesh(water, reg, 1), "park": mesh(park, reg, 1), "air": mesh(air, reg, 1) if air else {"v": [], "i": []},
-    "bld": mesh(bld, corr_b, 0.6), "minor": mesh(roads["minor"], reg, 0.5), "major": mesh(roads["major"], reg, 0.5),
+    "bld": mesh(bld, corr_b, 1.0), "minor": mesh(roads["minor"], reg, 0.8), "major": mesh(roads["major"], reg, 0.8),
 }
 for k, v in layers.items(): print(k, len(v["v"]) // 2, "vértices")
 

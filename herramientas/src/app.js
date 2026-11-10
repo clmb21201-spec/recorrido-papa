@@ -4,7 +4,10 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 // Datos: se cargan de los archivos de datos/ (o vienen incrustados en la versión sin internet)
 async function J(p) { const r = await fetch(p, { cache: "no-cache" }); if (!r.ok) throw new Error("No se pudo cargar " + p); return r.json(); }
-const INL = window.__INLINE__;
+// versión de un solo archivo: los datos vienen comprimidos (gzip) y se descomprimen aquí
+const INL = window.__INLINE_GZ__
+  ? Object.assign({}, window.__INLINE__, await new Response(new Blob([Uint8Array.from(atob(window.__INLINE_GZ__), c => c.charCodeAt(0))]).stream().pipeThrough(new DecompressionStream("gzip"))).json())
+  : window.__INLINE__;
 const [AG, MAPPE, RUTAS] = INL ? [INL.agenda, INL.peru, INL.rutas]
   : await Promise.all([J("datos/agenda.json"), J("datos/peru.json"), J("datos/rutas.json")]);
 const TITULO = AG.titulo, LUGARES = AG.lugares, DURACION_MIN = AG.duracion_min, DIAS = AG.dias;

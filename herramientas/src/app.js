@@ -544,7 +544,7 @@ function ovHTML() {
 const CARD = $("card");
 const CREDITOS = AG.creditos || [];
 CARD.innerHTML = `<svg viewBox="150 40 900 840"></svg>
-  <div class="cc" data-c="cover"><div class="tx"><div class="t">${esc(AG.caratula || TITULO)}</div><div class="u"></div>
+  <div class="cc" data-c="cover"><div class="tx"><div class="t">${esc(AG.caratula || TITULO)}</div>${AG.bajada ? `<div class="b">${esc(AG.bajada)}</div>` : ""}<div class="u"></div>
     <div class="s">${esc(AG.medio || "")}</div>
     <div class="nav"><div class="k">Cómo navegar</div>
       <div class="kl"><span><b class="ar">→</b> o <b>Espacio</b> siguiente</span><span><b class="ar">←</b> anterior</span><span><b>1 – 6</b> o clic en la barra de días: ir a un día</span>

@@ -1,11 +1,12 @@
 {
  "titulo": "Visita del Papa al Perú",
  "caratula": "Las rutas del Papa en el Perú",
+ "bajada": "Lima, Chiclayo, Cusco y Pucallpa: sigue en el mapa cada traslado de León XIV",
  "medio": "Diario El Comercio",
  "anio": "2026",
  "creditos": [
   {
-   "rol": "Animación y desarrollo web",
+   "rol": "Dirección, diseño y animación",
    "nombres": [
     "Carls Mayo"
    ]

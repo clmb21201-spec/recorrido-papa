@@ -9,7 +9,7 @@ PBF = {"lima": os.path.join(FUENTE, "Lima.osm.pbf"), "cusco": os.path.join(FUENT
 if not os.path.exists(PBF["lima"]):   # extracto de OpenStreetMap de Lima (BBBike)
     urllib.request.urlretrieve("https://download.bbbike.org/osm/bbbike/Lima/Lima.osm.pbf", PBF["lima"])
 # nombres populares que reemplazan a los de OpenStreetMap en los rótulos
-ALIAS = {"Óvalo Saloom": "Óvalo La Perla"}
+ALIAS = {"Avenida 9 de Diciembre": "Paseo Colón", "Óvalo Saloom": "Óvalo La Perla"}
 # lugares de Lima y Callao desde web/datos/agenda.json
 _AG = json.load(open(os.path.join(AQUI, "..", "web", "datos", "agenda.json"), encoding="utf-8"))
 V = {k: (v["lat"], v["lon"]) for k, v in _AG["lugares"].items()}
@@ -20,16 +20,16 @@ LEGS = {
  "w1": {"ciudad": "lima", "auto": True,
         "privadas": True,   # sale de la plataforma por las calles internas de la base (en el mapa figuran como privadas)
         "pts": [(-12.0107, -77.1160), (-12.05355, -77.09807), (-12.0744, -77.09942), (-12.07776, -77.08889), (-12.07777, -77.08288), (-12.07354, -77.06253),
-                (-12.08935, -77.06954), (-12.09096, -77.06476), (-12.0884, -77.06464), (-12.06322, -77.04416), (-12.0610, -77.0424)],
-        "por": ["Avenida Elmer Faucett", "Avenida de La Marina", "Avenida Antonio José de Sucre", "Avenida Javier Prado Oeste", "Avenida Brasil"],
-        "fuente": "Monseñor Guillermo Inca (Conferencia Episcopal, 9 nov.) y general Víctor Meza (PNP): Faucett, La Marina, Sucre, Javier Prado y Brasil"},
+                (-12.0870, -77.0687), (-12.08845, -77.06928), (-12.08881, -77.06823), (-12.08968, -77.06589), (-12.06322, -77.04416), (-12.0610, -77.0424)],
+        "por": ["Avenida Elmer Faucett", "Avenida de La Marina", "Avenida Antonio José de Sucre", "Jirón Junín", "Avenida Brasil"],
+        "fuente": "Monseñor Guillermo Inca (Conferencia Episcopal, 9 nov.) y general Víctor Meza (PNP): Faucett, La Marina, Sucre y Brasil; de Sucre a Brasil por el Jr. Junín (confirmado por el equipo, 10 nov.)"},
  "w2": {"ciudad": "lima",
-        "pts": [(-12.0610, -77.0424), (-12.0600, -77.0421), (-12.0582, -77.0416), (-12.05623, -77.04191), (-12.05596, -77.03891), (-12.05489, -77.03824), (-12.0483, -77.0388),
+        "pts": [(-12.0610, -77.0424), (-12.0600, -77.0421), (-12.06025, -77.04036), (-12.0600, -77.0388), (-12.0575, -77.0377), (-12.05489, -77.03824), (-12.0483, -77.0388),
                 (-12.0455, -77.0368), (-12.0426, -77.0349), (-12.0436, -77.0332), (-12.04517, -77.0307), (-12.04613, -77.03136), (-12.0467, -77.03041),
                 (-12.04578, -77.02976), (-12.0453, -77.03051)],
-        "por": ["Avenida Brasil", "Avenida Bolivia", "Avenida Garcilaso de la Vega", "Avenida Tacna", "Jirón Conde de Superunda",
+        "por": ["Avenida Brasil", "Paseo Colón", "Avenida Garcilaso de la Vega", "Avenida Tacna", "Jirón Conde de Superunda",
                 "Jirón de la Unión", "Jirón Huallaga", "Jirón Carabaya", "Jirón Junín"],
-        "fuente": "Mapa oficial de la Conferencia Episcopal (9 nov.): Brasil, Plaza Bolognesi, Bolivia, Garcilaso de la Vega, Conde de Superunda; vuelta a la Plaza"},
+        "fuente": "Mapa oficial de la Conferencia Episcopal (9 nov.) y confirmación del equipo (10 nov.): Brasil, Plaza Bolognesi, Paseo Colón, Garcilaso de la Vega, Tacna, Conde de Superunda; vuelta a la Plaza"},
  "t1": {"ciudad": "lima",
         "pts": [(-12.0575, -77.0377), (-12.05489, -77.03824), (-12.0483, -77.0388), (-12.0455, -77.0368)],
         "por": ["Avenida Garcilaso de la Vega", "Avenida Tacna"],

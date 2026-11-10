@@ -108,47 +108,70 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--paper)}
 #card .b{font:400 30px/1.35 var(--sans);color:var(--text);margin-top:30px;max-width:780px}
 #card .nav{margin-top:110px}
 #card .kl b.ar{font:700 22px/1 Arial,sans-serif;padding:1px 9px 3px}
-#card .kl{display:grid;grid-template-columns:repeat(2,auto);justify-content:start;gap:12px 48px;margin-top:20px;font:400 21px/1.3 var(--sans);color:var(--text)}
+#card .kl{display:grid;grid-template-columns:1fr;justify-content:start;gap:12px 48px;margin-top:20px;font:400 21px/1.3 var(--sans);color:var(--text)}
 #card .kl b{font-weight:700;color:var(--ink);background:#F1EEE7;border:1px solid #E2DDD2;border-radius:6px;padding:2px 9px;font-size:.9em}
 #card .cr h3{font:600 17px/1 var(--sans);letter-spacing:.24em;color:var(--mute);text-transform:uppercase;margin:52px 0 0}
 #card .cr h3:first-of-type{margin-top:56px}
 #card .cr p{font:700 46px/1.25 var(--serif);color:var(--ink);margin:16px 0 0}
 #card .cr p.l{font-size:40px;margin-top:10px}
-/* formato vertical (1080×1920): mapa arriba, panel abajo */
-body.vert #panel{left:0;top:1000px;width:1080px;height:920px;padding:44px 64px 0;border-left:0;border-top:1px solid #E7E3DA}
-body.vert #clock{top:44px;right:64px;font-size:17px}
-body.vert .kick{font-size:17px}
-body.vert #speed{top:70px;right:64px}
-body.vert #body{left:64px;right:64px;top:96px;bottom:128px}
-body.vert #strip{left:64px;right:64px;bottom:34px}
-body.vert .dayhead{gap:36px}
-body.vert .dnum{font-size:116px}
-body.vert .city{max-width:none;font-size:34px}
-body.vert .evs{margin-top:30px}
-body.vert .ev{font-size:29px;margin-bottom:18px}
-body.vert .ev.leg{font-size:23px}
-body.vert .ev.leg .lv{font-size:19px}
-body.vert .lx{font-size:19px}
-body.vert .dense .dnum{font-size:96px}
-body.vert .dense .ev{font-size:26px;margin-bottom:13px}
-body.vert .dense .ev.leg{font-size:21px}
-body.vert .xdense .dnum{font-size:84px}
-body.vert .xdense .ev{font-size:23px;margin-bottom:9px}
-body.vert .xdense .ev.leg{font-size:19px}
-body.vert .xdense .ev.leg .lv{font-size:17px}
-body.vert .ovt{font-size:58px}
-body.vert .ovl{margin-top:28px}
-body.vert .ovr{padding:11px 0}
+/* botones ‹ › */
+#nav{position:absolute;left:1004px;top:992px;display:flex;gap:12px;z-index:7}
+#nav button{width:64px;height:64px;border-radius:50%;border:1px solid #E2DDD2;background:rgba(255,255,255,.92);color:var(--ink);font:400 44px/1 Georgia,serif;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.08);padding-bottom:6px}
+#nav button:hover{background:#fff;color:var(--gold)}
+#card .go{margin-top:40px;font:600 20px/1 var(--sans);letter-spacing:.06em;color:var(--gold)}
+#card{cursor:pointer}
+/* formato vertical (1080×1920, celular): mapa arriba, panel abajo, todo más grande */
+body.vert #panel{left:0;top:960px;width:1080px;height:960px;padding:40px 56px 0;border-left:0;border-top:1px solid #E7E3DA}
+body.vert .kick,body.vert #clock{font-size:22px}
+body.vert #clock{top:40px;right:56px}
+body.vert #speed{top:72px;right:56px;font-size:20px}
+body.vert #body{left:56px;right:56px;top:104px;bottom:170px}
+body.vert .dayhead,body.vert .dense .dayhead{gap:34px;align-items:center}
+body.vert .dname,body.vert .dense .dname{font-size:38px}
+body.vert .dnum,body.vert .dense .dnum,body.vert .xdense .dnum{font-size:110px}
+body.vert .city,body.vert .dense .city{max-width:none;font-size:44px;padding:20px 30px 18px}
+body.vert .cnt{font:700 22px/1 var(--sans);letter-spacing:.14em;color:var(--mute);margin-top:22px}
+body.vert .evs,body.vert .dense .evs,body.vert .xdense .evs{margin-top:28px;padding-left:62px}
+body.vert .evs:before{left:12px}
+body.vert .ev,body.vert .dense .ev,body.vert .xdense .ev{font-size:40px;line-height:1.25;margin-bottom:24px}
+body.vert .ev.leg:not(.now) .lv{display:none}
+body.vert .ev.far{display:none}
+body.vert .ev:before,body.vert .dense .ev:before{left:-62px;top:12px;width:24px;height:24px;border-width:4px}
+body.vert .ev.leg,body.vert .dense .ev.leg,body.vert .xdense .ev.leg{font-size:34px}
+body.vert .ev.leg:before{width:16px;height:16px;left:-58px;top:14px}
+body.vert .ev.leg .lv,body.vert .xdense .ev.leg .lv{font-size:25px;margin-top:4px}
+body.vert .nowtag{font-size:20px;margin-bottom:10px}
+body.vert .bar{height:9px}
+body.vert .lx{font-size:27px}
+body.vert .ovt{font-size:62px}
+body.vert .ovsub{font-size:28px;margin-top:10px}
+body.vert .ovl{margin-top:18px}
+body.vert .ovr{padding:9px 0}
+body.vert .ovr .n{font-size:50px;width:84px}
+body.vert .ovr .d{font-size:20px;width:180px}
+body.vert .ovr .c{font-size:34px}
+body.vert #strip{left:32px;right:32px;bottom:26px;padding-top:18px}
+body.vert .sd .a{font-size:22px;letter-spacing:.1em}
+body.vert .sd .b{font-size:58px}
+body.vert .sd .u{width:52px;height:4px}
+body.vert #nav{left:auto;top:auto;bottom:984px;right:28px;gap:18px}
+body.vert #nav button{width:104px;height:104px;font-size:72px;padding-bottom:10px}
 body.vert #help{left:24px;right:24px}
 body.vert #card{width:1080px;height:1920px}
-body.vert #card svg{left:170px;top:1060px;width:740px;height:800px}
-body.vert #card .tx{left:96px;right:96px;width:auto;top:130px;bottom:auto;display:block}
-body.vert #card .t{font-size:108px}
-body.vert #card .b{font-size:30px}
-body.vert #card .nav{margin-top:64px}
-body.vert #card .kl{gap:12px 40px;font-size:21px}
-body.vert #card .cr{top:180px}
-body.vert #card [data-c="cred"] .tx{top:150px}
+body.vert #card svg{left:170px;top:1080px;width:740px;height:780px}
+body.vert #card .tx{left:84px;right:84px;width:auto;top:120px;bottom:auto;display:block}
+body.vert #card .t{font-size:112px}
+body.vert #card .b{font-size:40px}
+body.vert #card .s{font-size:40px}
+body.vert #card .nav{margin-top:60px}
+body.vert #card .k{font-size:22px}
+body.vert #card .kl{grid-template-columns:1fr;gap:16px;font-size:34px}
+body.vert #card .kl b{font-size:1em}
+body.vert #card .go{font-size:34px;margin-top:44px}
+body.vert #card [data-c="cred"] .tx{top:140px}
+body.vert #card .cr h3{font-size:24px}
+body.vert #card .cr p{font-size:60px}
+body.vert #card .cr p.l{font-size:54px}
 </style>
 </head>
 <body>
@@ -168,7 +191,7 @@ body.vert #card [data-c="cred"] .tx{top:150px}
     <b>← / RePág</b> paso anterior<br>
     <b>P</b> pausa o reanuda el traslado · <b>+ / −</b> velocidad (×0,5 a ×10; ahora <span id="hspeed">×1</span>) · <b>N</b> velocidad normal<br>
     <b>1 – 6</b> primer paso de cada día · <b>0 / Inicio</b> carátula<br>
-    <b>F</b> o doble clic: pantalla completa · <b>V</b> vertical / horizontal · <b>H</b> esta ayuda
+    <b>F</b> o doble clic: pantalla completa · <b>V</b> cambiar vertical / horizontal · <b>H</b> esta ayuda
   </div>
 </div>
 <!--__DATA__-->

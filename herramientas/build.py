@@ -25,7 +25,7 @@ open(os.path.join(WEB, "index.html"), "w", encoding="utf-8").write(tpl.replace("
 
 # 2) página de Claude: sin doctype/head/body, fuentes y código incrustados; datos y auto como archivos publicados
 GF = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:wght@700;900&display=block">'
-body = tpl.replace("/*__FONTS__*/", "").replace("<style>", GF + "\n<style>", 1).replace("<!--__DATA__-->", "<script>window.__VERT_DEFAULT__ = true;</script>")   # la versión de Claude abre en vertical
+body = tpl.replace("/*__FONTS__*/", "").replace("<style>", GF + "\n<style>", 1).replace("<!--__DATA__-->", "")
 body = body.replace('<script type="module" src="app.js"></script>', '<script type="module">' + app.replace("</script", "<\\/script") + "</script>")
 head = body[body.index("<head>") + 6: body.index("</head>")].replace('<meta charset="utf-8">', "")
 page = head.strip() + "\n" + body[body.index("<body>") + 6: body.index("</body>")].strip() + "\n"

@@ -31,9 +31,12 @@ const PAPA_BIN = INL ? Uint8Array.from(atob(INL.papa), c => c.charCodeAt(0)).buf
 const VERT = (() => { const q = new URLSearchParams(location.search);
   if (q.has("vertical")) return true; if (q.has("horizontal")) return false;
   try { const v = localStorage.getItem("papa_formato"); if (v) return v === "vertical"; } catch (e) {}
-  return !!window.__VERT_DEFAULT__; })();
+  return innerWidth < innerHeight; })();   // por defecto: pantalla vertical (celular) → vertical; horizontal → horizontal
+const VERT_AUTO = (() => { const q = new URLSearchParams(location.search); if (q.has("vertical") || q.has("horizontal")) return false;
+  try { if (localStorage.getItem("papa_formato")) return false; } catch (e) {} return true; })();
+const LS = VERT ? 1.45 : 1;   // en vertical (celular) los rótulos del mapa van más grandes
 const SW = VERT ? 1080 : 1920, SH = VERT ? 1920 : 1080;
-const MW = VERT ? 1080 : 1160, MH = VERT ? 1000 : 1080;
+const MW = VERT ? 1080 : 1160, MH = VERT ? 960 : 1080;
 document.body.classList.toggle("vert", VERT);
 { const G = id => document.getElementById(id), st_ = G("stage").style; st_.width = SW + "px"; st_.height = SH + "px";
   for (const id of ["street", "fade", "countrywrap", "country", "cov", "planecv"]) { const e = G(id); e.style.width = MW + "px"; e.style.height = MH + "px"; }
@@ -182,7 +185,7 @@ function countryDraw(now) {
   const seen = new Set(); STEPS.slice(1, st.step + 1).forEach(x => seen.add(cityOf(x)));
   CNAMES.forEach(n => {
     const p = pin[n], [x, y] = CS(CP[n][0], CP[n][1]), cur = c === n;
-    p.grp.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+    p.grp.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)})${LS !== 1 ? ` scale(${LS})` : ""}`);
     p.dot.setAttribute("r", cur ? 9 : 6); p.dot.setAttribute("fill", cur ? GOLD : (seen.has(n) || s.kind === "ov") ? INK : "#fff"); p.dot.setAttribute("stroke", cur ? "#fff" : INK);
     const ph = (now % 1800) / 1800; p.halo.setAttribute("r", cur ? 10 + ph * 26 : 0); p.halo.setAttribute("opacity", cur ? 1 - ph : 0);
     let [dx, dy, anc, minz] = LBL[n], show = cur || ccam.z >= minz;
@@ -325,6 +328,7 @@ function textTex(lines, o) {
   return { tx, aspect: cv.width / cv.height };
 }
 function flatLabel(lines, o, heightM, parent = scene) {
+  heightM *= LS;
   const { tx, aspect } = textTex(lines, o);
   const m = new THREE.Mesh(new THREE.PlaneGeometry(heightM * aspect, heightM), new THREE.MeshBasicMaterial({ map: tx, transparent: true, depthTest: false, depthWrite: false }));
   m.renderOrder = o.order || ORD.lab; m.frustumCulled = false; parent.add(m); return m;
@@ -541,7 +545,7 @@ function kmEntre(a, b) { if (!LL[a] || !LL[b]) return null; const r = Math.PI / 
 const nombreC = c => c === "ROMA" ? "Roma" : c === "BUENOS AIRES" ? "Buenos Aires" : tc(c);
 function dayHTML(di) {
   const d = DIAS[di];
-  return `<div class="dayhead"><div><div class="dname">${d.dia}</div><div class="dnum">${d.num}</div></div><div class="city">${esc(d.ciudad)}</div></div>
+  return `<div class="dayhead"><div><div class="dname">${d.dia}</div><div class="dnum">${d.num}</div></div><div class="city">${esc(d.ciudad)}</div></div>${VERT ? '<div class="cnt"></div>' : ""}
   <div class="evs">${d.items.map((it, i) => it.tramo
     ? `<div class="ev leg" data-i="${i}"><span class="nowtag">EN CAMINO</span><div class="lt">${esc(it.titulo || "Traslado a " + LUGARES[it.a].nombre)}</div><div class="lv">${viasDe(it.tramo).map(esc).join(" · ")}</div><div class="lp"><div class="bar"><i></i></div><div class="lx"></div></div></div>`
     : it.vuelo
@@ -558,9 +562,10 @@ const CREDITOS = AG.creditos || [];
 CARD.innerHTML = `<svg viewBox="150 40 900 840"></svg>
   <div class="cc" data-c="cover"><div class="tx"><div class="t">${esc(AG.caratula || TITULO)}</div>${AG.bajada ? `<div class="b">${esc(AG.bajada)}</div>` : ""}<div class="u"></div>
     <div class="s">${esc(AG.medio || "")}</div>
-    <div class="nav"><div class="k">Cómo navegar</div>
-      <div class="kl"><span><b class="ar">→</b> o <b>Espacio</b> siguiente</span><span><b class="ar">←</b> anterior</span><span><b>1 – 6</b> o clic en la barra de días: ir a un día</span>
-      <span><b>P</b> pausa</span><span><b>+ / −</b> velocidad</span><span><b>F</b> pantalla completa</span><span><b>H</b> ayuda</span><span><b>0</b> volver a esta carátula</span></div></div></div></div>
+    <div class="nav"><div class="k">Cómo navegar</div>${VERT
+      ? `<div class="kl"><span>Desliza o toca <b>›</b> para avanzar y <b>‹</b> para volver</span><span>Toca un día en la barra inferior para ir a él</span></div>`
+      : `<div class="kl"><span><b class="ar">→</b> <b class="ar">←</b> o los botones <b>‹ ›</b>: avanzar y volver</span><span>Clic en un día de la barra: ir a ese día</span>
+      <span><b>F</b> pantalla completa</span><span><b>H</b> todas las teclas</span></div>`}<div class="go">Toca o haz clic para empezar ›</div></div></div></div>
   <div class="cc" data-c="cred"><div class="tx cr"><div class="k">Créditos</div>${CREDITOS.map(c => `<h3>${esc(c.rol)}</h3>${c.nombres.map((n, i) => `<p class="${c.nombres.length > 2 ? "l" : ""}">${esc(n)}</p>`).join("")}`).join("")}
     <div class="u"></div><div class="s">${esc([AG.medio, AG.anio].filter(Boolean).join(" · "))}</div></div></div>`;
 { const sv = CARD.querySelector("svg");
@@ -578,7 +583,9 @@ function panelEnter(instant) {
   cardPaint();
   const s = STEPS[st.step], day = s.kind === "ov" ? -1 : s.di;
   strip.querySelectorAll(".sd").forEach(el => { const i = +el.dataset.i; el.className = "sd" + (i === day ? " cur" : day >= 0 && i < day ? " done" : ""); });
-  const apply = () => body.querySelectorAll(".ev").forEach(el => { const i = +el.dataset.i; el.className = "ev" + (el.classList.contains("leg") ? " leg" : "") + (i < s.ii ? " past" : i === s.ii ? " now" : i === s.ii + 1 ? " next" : ""); });
+  // en vertical solo se ven la actividad anterior, la actual y la siguiente (con un contador «4 de 8»)
+  const apply = () => { const evs = body.querySelectorAll(".ev"); evs.forEach(el => { const i = +el.dataset.i; el.className = "ev" + (el.classList.contains("leg") ? " leg" : "") + (el.classList.contains("air") ? " air" : "") + (i < s.ii ? " past" : i === s.ii ? " now" : i === s.ii + 1 ? " next" : "") + (VERT && (i < s.ii - 1 || i > s.ii + 1) ? " far" : ""); });
+    const cn = body.querySelector(".cnt"); if (cn) cn.textContent = `${s.ii + 1} de ${evs.length}`; };
   if (day === curDay) { apply(); return; }
   curDay = day;
   const fill = () => { body.innerHTML = s.kind === "ov" ? ovHTML() : dayHTML(day); body.classList.toggle("dense", s.kind !== "ov" && DIAS[day].items.length > 5); body.classList.toggle("xdense", s.kind !== "ov" && DIAS[day].items.length > 7); if (s.kind !== "ov") apply(); };
@@ -636,6 +643,18 @@ function setSpeed(dir) {
   el.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("on"), 2000);
   $("hspeed").textContent = "×" + String(st.speed).replace(".", ",");
 }
+// botones ‹ › y gestos (para el público en la web: mouse o pantalla táctil)
+const NAV = document.createElement("div"); NAV.id = "nav";
+NAV.innerHTML = `<button data-d="-1" aria-label="Anterior">‹</button><button data-d="1" aria-label="Siguiente">›</button>`;
+$("stage").appendChild(NAV);
+NAV.addEventListener("click", e => { const b = e.target.closest("button"); if (b) go(st.step + +b.dataset.d); });
+NAV.addEventListener("dblclick", e => e.stopPropagation());
+CARD.addEventListener("click", () => { if (STEPS[st.step].card === "cover") go(st.step + 1); });
+let tx0 = null, ty0 = null;
+addEventListener("touchstart", e => { if (e.touches.length === 1) { tx0 = e.touches[0].clientX; ty0 = e.touches[0].clientY; } }, { passive: true });
+addEventListener("touchend", e => { if (tx0 == null) return; const t = e.changedTouches[0], dx = t.clientX - tx0, dy = t.clientY - ty0; tx0 = null;
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) go(st.step + (dx < 0 ? 1 : -1)); }, { passive: true });
+if (VERT_AUTO) { const was = VERT; addEventListener("resize", () => { if ((innerWidth < innerHeight) !== was) location.reload(); }); }   // girar el celular cambia el formato
 function firstOfDay(di) { return STEPS.findIndex(s => s.kind !== "ov" && s.di === di); }
 addEventListener("keydown", e => {
   const k = e.key, s = STEPS[st.step];

@@ -115,6 +115,14 @@ const cLegs = []; { let prev = "ROMA"; STEPS.forEach((s, i) => {
   if (s.kind === "air") { cLegs.push({ a: s.from, b: s.to, step: i, air: true }); prev = s.to; return; }
   const c = cityOf(s); if (!c) return; if (c !== prev) cLegs.push({ a: prev, b: c, step: i }); prev = c; }); }
 const cLab = MAPPE.countryLabels.map(([n, p]) => { const t = add(ov, "text", { class: "cty", "text-anchor": "middle" }); t.textContent = n; return { t, p }; });
+// /radar/: ciudades de referencia en el camino (para ubicarse en el plano cercano)
+const REFS = RADAR ? [["Buenos Aires", -34.60, -58.38], ["Rosario", -32.95, -60.64], ["Córdoba", -31.42, -64.18], ["Santa Fe", -31.63, -60.70],
+  ["San Luis", -33.30, -66.34], ["Mendoza", -32.89, -68.83], ["La Rioja", -29.41, -66.86], ["Santiago del Estero", -27.78, -64.26],
+  ["San Miguel de Tucumán", -26.82, -65.22], ["Catamarca", -28.47, -65.78], ["Salta", -24.78, -65.41], ["San Juan", -31.54, -68.54],
+  ["Santiago de Chile", -33.45, -70.67], ["Antofagasta", -23.65, -70.40], ["Calama", -22.46, -68.93], ["Iquique", -20.21, -70.15], ["Arica", -18.48, -70.31],
+  ["Tacna", -18.01, -70.25], ["Arequipa", -16.41, -71.54], ["Moquegua", -17.19, -70.94], ["Ica", -14.07, -75.73], ["Nasca", -14.83, -74.94], ["Pisco", -13.71, -76.20],
+  ["La Paz", -16.50, -68.15], ["Potosí", -19.58, -65.75], ["Sucre", -19.04, -65.26], ["Uyuni", -20.46, -66.83], ["Asunción", -25.26, -57.58], ["Montevideo", -34.90, -56.16]]
+  .map(([n, la, lo]) => { const g = add(ov, "g", { opacity: 0 }); add(g, "circle", { r: 3.5, fill: "#8C877D" }); const t = add(g, "text", { class: "ref", x: 8, y: 5 }); t.textContent = n; return { g, p: projLL(la, lo) }; }) : [];
 const cPlanEl = cLegs.map(() => add(ov, "path", { fill: "none", stroke: GOLD, "stroke-width": 3, "stroke-opacity": .35, "stroke-dasharray": "2 9", "stroke-linecap": "round" }));
 const cLegEl = cLegs.map(() => add(ov, "path", { fill: "none", stroke: GOLD, "stroke-width": 3.5, "stroke-linecap": "round" }));
 const pin = {};
@@ -174,13 +182,19 @@ function deptPaint() {
     if (deptEl[k].classList.contains("tour") !== b) deptEl[k].classList.toggle("tour", b);
   }
 }
-let vivoCamAt = 0;
+let vivoFaseAct = null;
 function countryDraw(now) {
-  { const s = STEPS[st.step]; if (s.kind === "air" && s.vivo && !arrived() && now - vivoCamAt > 8000 && now - ct0 > cdur) { vivoCamAt = now; cMove(vivoCam(s), 3000); } }
+  { const s = STEPS[st.step];
+    if (s.kind === "air" && s.vivo && !arrived()) {
+      const f = vivoFase(s), t = vivoCam(s, f);
+      if (f !== vivoFaseAct) { vivoFaseAct = f; cMove(t, 3200); }   // cambio de plano: acercamiento o alejamiento suave
+      else if (now - ct0 > cdur) cto = t;   // entre cambios, la cámara sigue al avión
+    } else vivoFaseAct = null; }
   cStep(now); if (STEPS[st.step].kind === "air") deptPaint();
   svg.setAttribute("viewBox", `${ccam.cx - MW / 2 / ccam.z} ${ccam.cy - MH / 2 / ccam.z} ${MW / ccam.z} ${MH / ccam.z}`);
   const s = STEPS[st.step], c = cityOf(s);
-  cLab.forEach(({ t, p }) => { const [x, y] = CS(p[0], p[1]); t.setAttribute("x", x); t.setAttribute("y", y); t.setAttribute("opacity", ccam.z < 1.8 ? .9 : Math.max(0, 1 - (ccam.z - 1.8))); });
+  cLab.forEach(({ t, p }) => { const [x, y] = CS(p[0], p[1]); t.setAttribute("x", x); t.setAttribute("y", y); t.setAttribute("opacity", RADAR || ccam.z < 1.8 ? .9 : Math.max(0, 1 - (ccam.z - 1.8))); });
+  REFS.forEach(r => { const [x, y] = CS(r.p[0], r.p[1]); r.g.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)})${LS !== 1 ? ` scale(${LS})` : ""}`); r.g.setAttribute("opacity", Math.max(0, Math.min(1, (ccam.z - 1.1) / .8))); });
   const toD = pts => pts.length > 1 ? "M" + pts.map(p => p[0].toFixed(1) + " " + p[1].toFixed(1)).join("L") : "";
   let plane = null;
   cLegs.forEach((l, i) => {
@@ -254,7 +268,7 @@ function planeDraw(pl) {
   const kind = pl.heli ? "heli" : "avion";
   for (const n in VEH) { VEH[n].wrap.visible = VEH[n].sh.visible = n === kind; }
   // en /radar/ el avión va más chico y con la sombra pegada y tenue (si no, parecen dos aviones)
-  const yaw = NOSES[kind] - pl.ang, sc = (.8 + (pl.heli ? .2 : .35) * alt) * (RADAR ? .6 : 1), off = (RADAR ? 7 : 34) * alt;
+  const yaw = NOSES[kind] - pl.ang, sc = (.8 + (pl.heli ? .2 : .35) * alt) * (RADAR ? .6 + .3 * Math.max(0, Math.min(1, (ccam.z - 1) / 3)) : 1), off = (RADAR ? 7 : 34) * alt;
   planeG.position.set(pl.x, 300, pl.y); planeYaw.rotation.y = yaw; planeTilt.rotation.x = -.42 * (.4 + .6 * alt); planeG.scale.setScalar(sc);
   shadowG.position.set(pl.x + off, 10, pl.y + off); shadowG.rotation.y = yaw; shadowG.scale.setScalar(sc * .95);
   if (RADAR) shadowG.visible = false;   // en /radar/ sin sombra: a esta escala se veía como un segundo avión
@@ -577,7 +591,7 @@ function kmEntre(a, b) { if (!LL[a] || !LL[b]) return null; const r = Math.PI / 
 // el avión sigue estimado por rumbo y velocidad hasta 10 min; sin datos, se ubica por el horario de despegue y llegada.
 LL["BUENOS AIRES"] = [-34.8222, -58.5375];
 const LIVE = { cs: null, ac: null, at: 0, trail: [], last: 0, landed: false, landedAt: 0, busy: false, fail: 0 };
-const projLL = (lat, lon) => { const k = MAPPE.scale, [tx, ty] = MAPPE.translate, r = Math.PI / 180; return [tx + k * lon * r, ty - k * Math.log(Math.tan(Math.PI / 4 + lat * r / 2))]; };
+function projLL(lat, lon) { const k = MAPPE.scale, [tx, ty] = MAPPE.translate, r = Math.PI / 180; return [tx + k * lon * r, ty - k * Math.log(Math.tan(Math.PI / 4 + lat * r / 2))]; }
 const kmLL = (a, b) => { const r = Math.PI / 180, h = Math.sin((b[0] - a[0]) * r / 2) ** 2 + Math.cos(a[0] * r) * Math.cos(b[0] * r) * Math.sin((b[1] - a[1]) * r / 2) ** 2; return 12742 * Math.asin(Math.sqrt(h)); };
 const SERVIDOR = /^https?:$/.test(location.protocol) && !/claude|localhost|127\.0\.0\.1/.test(location.hostname) && !INL;
 async function livePoll() {
@@ -621,10 +635,28 @@ function vivoNow(s) {
   const remain = kmLL([lat, lon], to);
   return { xy: projLL(lat, lon), ang, frac: Math.max(0, Math.min(.999, 1 - remain / tot)), src, altf, remain, alt, gs };
 }
-function vivoCam(s) {
+// cámara del radar: ciclo de 40 s cerca del avión y 20 s con el recorrido completo; a menos de 300 km de Lima queda cerca.
+// Tecla Z: ciclo automático → siempre cerca → siempre lejos
+const RCAM_MODOS = ["ciclo", "cerca", "lejos"], RCAM_TXT = { ciclo: "Cámara: ciclo automático", cerca: "Cámara: siempre cerca", lejos: "Cámara: siempre lejos" };
+let rcam = "ciclo";
+function vivoFase(s) {
+  const v = vivoNow(s);
+  if (v.remain < 300) return "final";
+  if (rcam !== "ciclo") return rcam;
+  return (Date.now() / 1000) % 60 < 40 ? "cerca" : "lejos";
+}
+function vivoCam(s, fase = vivoFase(s)) {
   const v = vivoNow(s), [x, y] = v.xy, [lx, ly] = CP[s.to];
+  if (fase === "cerca") {   // unos 380 km de ancho alrededor del avión
+    const lat = LIVE.ac ? LIVE.ac.lat : -20, uKm = MAPPE.scale / 6371 / Math.cos(lat * Math.PI / 180);
+    return { cx: x, cy: y, z: MW / (380 * uKm) };
+  }
+  if (fase === "lejos") {   // recorrido completo desde Buenos Aires
+    const [bx, by] = CP[s.from], X0 = Math.min(x, lx, bx), X1 = Math.max(x, lx, bx), Y0 = Math.min(y, ly, by), Y1 = Math.max(y, ly, by);
+    return { cx: (X0 + X1) / 2, cy: (Y0 + Y1) / 2, z: MW / Math.max((X1 - X0) * 1.3 + 120, ((Y1 - Y0) * 1.3 + 120) * MW / MH) };
+  }
   const x0 = Math.min(x, lx), x1 = Math.max(x, lx), y0 = Math.min(y, ly), y1 = Math.max(y, ly);
-  return { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, z: MW / Math.max(420, (x1 - x0) * 1.5 + 160, ((y1 - y0) * 1.5 + 160) * MW / MH) };
+  return { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, z: MW / Math.max(200, (x1 - x0) * 1.6 + 120, ((y1 - y0) * 1.6 + 120) * MW / MH) };   // tramo final: avión y Lima
 }
 const nombreC = c => c === "ROMA" ? "Roma" : c === "BUENOS AIRES" ? "Buenos Aires" : tc(c);
 function dayHTML(di) {
@@ -755,6 +787,8 @@ addEventListener("keydown", e => {
   else if (k === "0" || k === "Home") go(0);
   else if (k >= "1" && k <= String(DIAS.length)) go(firstOfDay(+k - 1));
   else if ((k === "p" || k === "P") && moving(s)) { rebase(); st.paused = !st.paused; save(); }
+  else if ((k === "z" || k === "Z") && s.vivo) { rcam = RCAM_MODOS[(RCAM_MODOS.indexOf(rcam) + 1) % 3];
+    const el = $("speed"); el.textContent = RCAM_TXT[rcam]; el.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("on"), 2000); }
   else if ((k === "+" || k === "=") && moving(s)) setSpeed(+1);
   else if ((k === "-" || k === "_") && moving(s)) setSpeed(-1);
   else if ((k === "n" || k === "N") && moving(s)) setSpeed(0);

@@ -622,10 +622,13 @@ function vivoNow(s) {
   const now = Date.now(), to = LL[s.to], from = LL[s.from], tot = kmLL(from, to);
   let lat, lon, ang, src, altf = 1, alt = null, gs = null;
   const age = (now - LIVE.at) / 1000;
-  if (LIVE.cs === s.vivo && LIVE.ac && age < 600) {
-    const a = LIVE.ac, tr = (a.track || 0) * Math.PI / 180, dkm = age > 20 && a.gs ? a.gs * 1.852 * (age - 10) / 3600 : 0;   // extrapola si la señal se atrasó
-    lat = a.lat + dkm * Math.cos(tr) / 111.2; lon = a.lon + dkm * Math.sin(tr) / (111.2 * Math.cos(a.lat * Math.PI / 180));
-    ang = tr - Math.PI / 2; src = age < 60 ? "vivo" : "estimada"; alt = typeof a.alt === "number" ? a.alt : 0; gs = a.gs;
+  if (LIVE.cs === s.vivo && LIVE.ac) {
+    // con señal: posición real. Sin señal: sigue desde el último punto real en línea recta hacia el destino, a la última velocidad
+    const a = LIVE.ac, d0 = kmLL([a.lat, a.lon], to), dkm = age > 20 && a.gs ? Math.min(d0 - 3, a.gs * 1.852 * (age - 10) / 3600) : 0;
+    if (dkm > 0) { const f = dkm / d0; lat = a.lat + (to[0] - a.lat) * f; lon = a.lon + (to[1] - a.lon) * f;
+      const [x0, y0] = projLL(a.lat, a.lon), [x1, y1] = projLL(to[0], to[1]); ang = Math.atan2(y1 - y0, x1 - x0); }
+    else { lat = a.lat; lon = a.lon; ang = (a.track || 0) * Math.PI / 180 - Math.PI / 2; }
+    src = age < 60 ? "vivo" : "estimada"; alt = typeof a.alt === "number" ? a.alt : 0; gs = a.gs;
     altf = Math.max(.15, Math.min(1, alt / 12000));
   } else {
     const t0 = s.desp || (st.t0 - st.base), t1 = s.lleg || t0 + s.min * 60000, u = Math.max(0, Math.min(1, (now - t0) / (t1 - t0)));
@@ -723,7 +726,7 @@ function panelTick(S) {
     if (s.vivo && !arrived()) {
       const v = vivoNow(s), n0 = x => String(Math.round(x)).replace(/\B(?=(\d{3})+(?!\d))/g, "\u202f");
       const quien = v.src === "vivo" ? `<b>En vivo</b>${v.alt != null ? ` · ${n0(v.alt * .3048)} m de altitud` : ""}${v.gs ? ` · ${n0(v.gs * 1.852)} km/h` : ""}`
-        : v.src === "estimada" ? "Señal perdida · posición estimada" : "Posición estimada según el horario";
+        : v.src === "estimada" ? `Sin señal hace ${Math.max(1, Math.round((Date.now() - LIVE.at) / 60000))} min · posición estimada` : "Posición estimada según el horario";
       el.querySelector(".lx").innerHTML = `${quien}<br>Faltan ${n0(v.remain)} km para ${esc(nombreC(s.to))}` + (v.src !== "horario" ? `<span class="src"> · Datos: adsb.lol</span>` : "");
       return;
     }

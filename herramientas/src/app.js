@@ -638,11 +638,11 @@ function vivoNow(s) {
   const remain = kmLL([lat, lon], to);
   return { xy: projLL(lat, lon), ang, frac: Math.max(0, Math.min(.999, 1 - remain / tot)), src, altf, remain, alt, gs };
 }
-// cámara del radar: ciclo de 40 s cerca del avión y 20 s con el recorrido completo; a menos de 300 km de Lima queda cerca.
-// Tecla Z: ciclo automático → siempre cerca → siempre lejos
-const RCAM_MODOS = ["ciclo", "cerca", "lejos"], RCAM_TXT = { ciclo: "Cámara: ciclo automático", cerca: "Cámara: siempre cerca", lejos: "Cámara: siempre lejos" };
-let rcam = "ciclo";
+// cámara del radar: por defecto, vista general (Buenos Aires–Lima). Tecla Z: vista general → ciclo (40 s cerca / 20 s general) → siempre cerca
+const RCAM_MODOS = ["lejos", "ciclo", "cerca"], RCAM_TXT = { ciclo: "Cámara: ciclo automático", cerca: "Cámara: siempre cerca", lejos: "Cámara: siempre lejos" };
+let rcam = "lejos";   // por defecto: vista general (pedido del equipo)
 function vivoFase(s) {
+  if (rcam === "lejos") return "lejos";
   const v = vivoNow(s);
   if (v.remain < 300) return "final";
   if (rcam !== "ciclo") return rcam;

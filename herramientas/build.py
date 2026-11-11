@@ -22,6 +22,10 @@ open(os.path.join(WEB, "app.js"), "w", encoding="utf-8").write(app)
 
 # 1) web
 open(os.path.join(WEB, "index.html"), "w", encoding="utf-8").write(tpl.replace("/*__FONTS__*/", css(False)).replace("<!--__DATA__-->", ""))
+# web/radar/: página oculta con el vuelo en vivo (adsb.lol a través del servidor)
+os.makedirs(os.path.join(WEB, "radar"), exist_ok=True)
+open(os.path.join(WEB, "radar", "index.html"), "w", encoding="utf-8").write(
+    tpl.replace("/*__FONTS__*/", css(False)).replace("<head>", '<head>\n<base href="../">\n<meta name="robots" content="noindex">', 1).replace("<!--__DATA__-->", "<script>window.__RADAR__ = true;</script>"))
 # web/lector/: la misma página para insertar en la web (sin sincronización); usa los archivos de la raíz
 os.makedirs(os.path.join(WEB, "lector"), exist_ok=True)
 open(os.path.join(WEB, "lector", "index.html"), "w", encoding="utf-8").write(

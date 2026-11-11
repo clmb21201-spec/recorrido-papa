@@ -54,7 +54,8 @@ const $ = id => document.getElementById(id);
 const STEPS = [{ kind: "ov", card: "cover" }, { kind: "ov" }];
 DIAS.forEach((d, di) => d.items.forEach((it, ii) => {
   if (it.tramo) STEPS.push({ kind: "leg", di, ii, leg: it.tramo, to: it.a, fin: it.fin || null, auto: !!(TRAMOS[it.tramo] && TRAMOS[it.tramo].auto) });
-  else if (it.vuelo) STEPS.push({ kind: "air", di, ii, from: it.de, to: it.a, min: it.min || 60, heli: it.vehiculo === "helicoptero" });
+  else if (it.vuelo) STEPS.push({ kind: "air", di, ii, from: it.de, to: it.a, min: it.min || 60, heli: it.vehiculo === "helicoptero",
+    vivo: (window.__RADAR__ || new URLSearchParams(location.search).has("radar")) && it.vivo || null, desp: it.despegue ? Date.parse(it.despegue) : null, lleg: it.llegada ? Date.parse(it.llegada) : null });
   else STEPS.push({ kind: "ev", di, ii, at: it.lugar || null, city: paisDe(it), c3: it.lugar && LUGARES[it.lugar] ? LUGARES[it.lugar].ciudad : null });
 }));
 STEPS.push({ kind: "ov", card: "cred" });
@@ -71,7 +72,9 @@ let OFFSET = 0, sock = null, sockOk = false;
 const clock = () => Date.now() + OFFSET;
 const MY_ID = Math.random().toString(36).slice(2);
 // versión para lectores (web de El Comercio): cada uno navega por su cuenta, sin sincronizar, y siempre empieza en la carátula
-const PUBLICO = !!window.__PUBLICO__ || new URLSearchParams(location.search).has("lector");
+// /radar/: página oculta con el vuelo en vivo (posición real del avión); igual que /lector/, sin sincronizar
+const RADAR = !!window.__RADAR__ || new URLSearchParams(location.search).has("radar");
+const PUBLICO = RADAR || !!window.__PUBLICO__ || new URLSearchParams(location.search).has("lector");
 function save(local) {
   try { localStorage.setItem("papa_live_v1", JSON.stringify(st)); } catch (e) {}
   if (!local && sockOk) try { sock.send(JSON.stringify({ type: "set", state: st, id: MY_ID })); } catch (e) {}
@@ -81,13 +84,15 @@ function load() { if (PUBLICO) return null; try { const v = JSON.parse(localStor
 const BASE = AG.velocidad_base || 1, VUELO_SEG = AG.vuelo_seg || 0, PAUSA_SEG = AG.pausa_llegada_seg ?? 3;
 // ya llegó (vuelo o recorrido) y está en la pausa: se calcula del estado, igual en todas las pantallas
 const arrived = () => { const s = STEPS[st.step]; return moving(s) && progMs() >= legMs(); };
-const rate = () => { const s = STEPS[st.step]; if (st.paused) return 0; return s.kind === "air" && VUELO_SEG ? st.speed : st.speed * BASE; };
+const rate = () => { const s = STEPS[st.step]; if (st.paused) return 0; return s.kind === "air" && (VUELO_SEG || s.vivo) ? (s.vivo ? 1 : st.speed) : st.speed * BASE; };
 // en la vista acelerada (velocidad_base > 1) ningún recorrido va más rápido que vel_pantalla_max metros por segundo en pantalla;
 // en tiempo real (velocidad_base 1) manda la duración de la agenda
 const VMAX = AG.vel_pantalla_max || 0;
-function legMs() { const s = STEPS[st.step]; if (s.kind === "air" && VUELO_SEG) return VUELO_SEG * 1000; if (s.kind === "air") return s.min * 60000;
+function legMs() { const s = STEPS[st.step]; if (s.kind === "air" && s.vivo) return LIVE.landed ? Math.min(Math.max(0, progMs()), LIVE.landedAt) : Infinity;   // vuelo en vivo: termina al aterrizar (o con →)
+  if (s.kind === "air" && VUELO_SEG) return VUELO_SEG * 1000; if (s.kind === "air") return s.min * 60000;
   const ms = (DURACION_MIN[s.leg] || 20) * 60000; return VMAX && BASE > 1 && ROUTE[s.leg] ? Math.max(ms, ROUTE[s.leg].L / VMAX * BASE * 1000) : ms; }
-function legFrac() { const u = Math.max(0, Math.min(1, Math.max(0, progMs()) / legMs())), ea = .04, v = 1 / (1 - ea);   // arranque y llegada suaves
+function legFrac() { const s0 = STEPS[st.step]; if (s0.kind === "air" && s0.vivo) return vivoNow(s0).frac;
+  const u = Math.max(0, Math.min(1, Math.max(0, progMs()) / legMs())), ea = .04, v = 1 / (1 - ea);   // arranque y llegada suaves
   return u < ea ? v * u * u / (2 * ea) : u > 1 - ea ? 1 - v * (1 - u) * (1 - u) / (2 * ea) : v * (u - ea / 2); }
 function progMs(now = clock()) { return st.base + (now - st.t0) * rate(); }
 function rebase(now = clock()) { st.base = progMs(now); st.t0 = now; }
@@ -99,7 +104,7 @@ const svg = $("country"), g = $("cg"), ov = $("cov");
 MAPPE.neighbors.forEach(n => add(g, "path", { d: n.d, class: "nb" }));
 const deptEl = {}; MAPPE.depts.forEach(n => deptEl[n.name] = add(g, "path", { d: n.d, class: "dp" }));
 add(g, "path", { d: MAPPE.peru, class: "pe" });
-const CP = MAPPE.places; CP.ROMA = [720, 500]; CP["BUENOS AIRES"] = [700, 900];   // entradas/salidas internacionales, fuera del encuadre de Lima
+const CP = MAPPE.places; CP.ROMA = [720, 500]; if (!RADAR || !CP["BUENOS AIRES"]) CP["BUENOS AIRES"] = [700, 900];   // Roma: fuera del encuadre; Buenos Aires: real solo en /radar/ (en la página principal, como antes)
 const INTL = new Set(["ROMA", "BUENOS AIRES"]);
 const DEPT = { LIMA: ["LIMA", "CALLAO"], CHICLAYO: ["LAMBAYEQUE"], PIMENTEL: ["LAMBAYEQUE"], "ZAÑA": ["LAMBAYEQUE"], "SANTA CRUZ": ["CAJAMARCA"], CUSCO: ["CUSCO"], PUCALLPA: ["UCAYALI"] };
 const TOUR = new Set(Object.values(DEPT).flat());
@@ -126,7 +131,7 @@ function frameFor(pts, minExt) {
 }
 const C_OV = { cx: 580, cy: 540, z: Math.min(MW / 1160, MH / 1080) };   // el mapa del Perú está dibujado en 1160×1080
 const DAYCAM = DIAS.map(d => { const ps = [...new Set(d.items.filter(i => !i.tramo && !i.vuelo).map(paisDe))]; return frameFor(ps, ps.length > 1 ? 300 : 340); });
-function airCam(s) { return !INTL.has(s.from) && !INTL.has(s.to) ? frameFor([s.from, s.to], 300) : DAYCAM[s.di]; }
+function airCam(s) { if (s.vivo) return vivoCam(s); return !INTL.has(s.from) && !INTL.has(s.to) ? frameFor([s.from, s.to], 300) : DAYCAM[s.di]; }
 let ccam = { ...C_OV }, cfrom = ccam, cto = ccam, ct0 = 0, cdur = 1;
 const easeIO = u => u < .5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
 function cMove(t, ms) { cfrom = { ...ccam }; cto = t; ct0 = performance.now(); cdur = ms; cfrom.dip = Math.min(1.1, Math.hypot(t.cx - cfrom.cx, t.cy - cfrom.cy) / 260); }
@@ -169,7 +174,9 @@ function deptPaint() {
     if (deptEl[k].classList.contains("tour") !== b) deptEl[k].classList.toggle("tour", b);
   }
 }
+let vivoCamAt = 0;
 function countryDraw(now) {
+  { const s = STEPS[st.step]; if (s.kind === "air" && s.vivo && !arrived() && now - vivoCamAt > 8000 && now - ct0 > cdur) { vivoCamAt = now; cMove(vivoCam(s), 3000); } }
   cStep(now); if (STEPS[st.step].kind === "air") deptPaint();
   svg.setAttribute("viewBox", `${ccam.cx - MW / 2 / ccam.z} ${ccam.cy - MH / 2 / ccam.z} ${MW / ccam.z} ${MH / ccam.z}`);
   const s = STEPS[st.step], c = cityOf(s);
@@ -180,12 +187,15 @@ function countryDraw(now) {
     const roma = INTL.has(l.a) || INTL.has(l.b);
     let k = s.kind === "ov" ? (roma ? 0 : 1) : l.step < st.step ? 1 : l.step === st.step ? (l.air ? legFrac() : 1) : 0;
     if (i === cLegAnim.i) k = easeIO(Math.max(0, Math.min(1, (now - cLegAnim.t0) / cLegAnim.dur)));
-    const pts = k > 0 ? arc(l.a, l.b, k).map(p => CS(p[0], p[1])) : [];
+    const vv = l.air && l.step === st.step && s.vivo ? vivoNow(s) : null;
+    const pts = vv ? [CP[l.a], ...(LIVE.cs === s.vivo ? LIVE.trail.map(p => projLL(p[0], p[1])) : []), vv.xy].map(p => CS(p[0], p[1]))
+      : k > 0 ? arc(l.a, l.b, k).map(p => CS(p[0], p[1])) : [];
     cLegEl[i].setAttribute("d", toD(pts));
-    cLegEl[i].setAttribute("stroke-dasharray", roma ? "2 10" : "none");
+    cLegEl[i].setAttribute("stroke-dasharray", roma && !vv ? "2 10" : "none");   // en vivo: la trayectoria real va en línea continua
     const cur = l.air && l.step === st.step;
-    cPlanEl[i].setAttribute("d", cur ? toD(arc(l.a, l.b, 1).map(p => CS(p[0], p[1]))) : "");
-    if (cur) { const q = arcAt(l.a, l.b, k), [x, y] = CS(q.x, q.y); plane = { x, y, ang: q.ang, k, heli: s.heli }; }
+    cPlanEl[i].setAttribute("d", cur ? (vv ? toD([vv.xy, CP[l.b]].map(p => CS(p[0], p[1]))) : toD(arc(l.a, l.b, 1).map(p => CS(p[0], p[1])))) : "");
+    if (cur && vv) { const [x, y] = CS(vv.xy[0], vv.xy[1]); plane = { x, y, ang: vv.ang, k: vv.frac, altf: vv.altf, heli: false }; }
+    else if (cur) { const q = arcAt(l.a, l.b, k), [x, y] = CS(q.x, q.y); plane = { x, y, ang: q.ang, k, heli: s.heli }; }
   });
   planeDraw(plane);
   const seen = new Set(); STEPS.slice(1, st.step + 1).forEach(x => seen.add(cityOf(x)));
@@ -240,7 +250,7 @@ loadVehicle("heli", HELI_BIN, HELI_PX, 1.0);
 function planeDraw(pl) {
   planeG.visible = shadowG.visible = !!pl;
   if (!pl) { pRenderer.clear(); return; }
-  const alt = Math.min(1, pl.k / .12, (1 - pl.k) / .12);   // sube al despegar y baja al aterrizar
+  const alt = pl.altf != null ? pl.altf : Math.min(1, pl.k / .12, (1 - pl.k) / .12);   // sube al despegar y baja al aterrizar (en vivo: según la altitud real)
   const kind = pl.heli ? "heli" : "avion";
   for (const n in VEH) { VEH[n].wrap.visible = VEH[n].sh.visible = n === kind; }
   const yaw = NOSES[kind] - pl.ang, sc = .8 + (pl.heli ? .2 : .35) * alt;
@@ -559,6 +569,61 @@ function viasDe(k) { const seen = []; ROUTE[k].names.forEach(([n, a, b]) => { if
 const LL = { LIMA: [-12.022, -77.114], CHICLAYO: [-6.787, -79.828], "SANTA CRUZ": [-6.626, -78.944], "ZAÑA": [-6.922, -79.585], CUSCO: [-13.536, -71.939], PUCALLPA: [-8.378, -74.574], PIMENTEL: [-6.837, -79.934] };
 function kmEntre(a, b) { if (!LL[a] || !LL[b]) return null; const r = Math.PI / 180, [la1, lo1] = LL[a], [la2, lo2] = LL[b];
   const h = Math.sin((la2 - la1) * r / 2) ** 2 + Math.cos(la1 * r) * Math.cos(la2 * r) * Math.sin((lo2 - lo1) * r / 2) ** 2; return 12742 * Math.asin(Math.sqrt(h)); }
+/* ======================= vuelo en vivo (adsb.lol) ======================= */
+// Durante un vuelo marcado con "vivo" en la agenda, la página pide la posición real del avión cada 10 s
+// (en Cloudflare, al servidor /vuelo, que consulta adsb.lol y guarda la trayectoria). Si se pierde la señal,
+// el avión sigue estimado por rumbo y velocidad hasta 10 min; sin datos, se ubica por el horario de despegue y llegada.
+LL["BUENOS AIRES"] = [-34.8222, -58.5375];
+const LIVE = { cs: null, ac: null, at: 0, trail: [], last: 0, landed: false, landedAt: 0, busy: false, fail: 0 };
+const projLL = (lat, lon) => { const k = MAPPE.scale, [tx, ty] = MAPPE.translate, r = Math.PI / 180; return [tx + k * lon * r, ty - k * Math.log(Math.tan(Math.PI / 4 + lat * r / 2))]; };
+const kmLL = (a, b) => { const r = Math.PI / 180, h = Math.sin((b[0] - a[0]) * r / 2) ** 2 + Math.cos(a[0] * r) * Math.cos(b[0] * r) * Math.sin((b[1] - a[1]) * r / 2) ** 2; return 12742 * Math.asin(Math.sqrt(h)); };
+const SERVIDOR = /^https?:$/.test(location.protocol) && !/claude|localhost|127\.0\.0\.1/.test(location.hostname) && !INL;
+async function livePoll() {
+  const s = STEPS[st.step];
+  if (s.kind !== "air" || !s.vivo || LIVE.busy) return;
+  if (LIVE.cs !== s.vivo) Object.assign(LIVE, { cs: s.vivo, ac: null, at: 0, trail: [], last: 0, landed: false, landedAt: 0 });
+  LIVE.busy = true;
+  try {
+    let ac = null, pts = [];
+    if (SERVIDOR || new URLSearchParams(location.search).has("vuelo_srv")) {
+      const r = await fetch(`/vuelo?cs=${encodeURIComponent(s.vivo)}&desde=${LIVE.last}`, { cache: "no-store" }); const j = await r.json();
+      ac = j.ac; pts = j.trail || [];
+    } else {   // sin servidor (archivo HTML o vista previa): se intenta directo
+      const r = await fetch(`https://api.adsb.lol/v2/callsign/${encodeURIComponent(s.vivo)}`, { cache: "no-store" }); const j = await r.json(); const a = (j.ac || [])[0];
+      if (a && a.lat != null) { ac = { lat: a.lat, lon: a.lon, alt: a.alt_baro, gs: a.gs, track: a.track, seen: a.seen_pos || 0 }; pts = [[a.lat, a.lon, typeof a.alt_baro === "number" ? a.alt_baro : 0, Date.now() - (a.seen_pos || 0) * 1000]]; }
+    }
+    pts.forEach(p => { if (p[3] > LIVE.last) { LIVE.trail.push(p); LIVE.last = p[3]; } });
+    if (ac && ac.lat != null) { LIVE.ac = ac; LIVE.at = Date.now() - (ac.seen || 0) * 1000; LIVE.fail = 0; }
+    // aterrizaje: en tierra (o muy bajo y lento) cerca del destino
+    if (ac && LL[s.to] && !LIVE.landed) { const d = kmLL([ac.lat, ac.lon], LL[s.to]);
+      if (d < 25 && (ac.alt === "ground" || (typeof ac.alt === "number" && ac.alt < 300) || (ac.gs != null && ac.gs < 60))) { LIVE.landed = true; LIVE.landedAt = Math.max(0, progMs()); } }
+  } catch (e) { LIVE.fail++; }
+  LIVE.busy = false;
+}
+setInterval(livePoll, 10000);
+// posición actual: real, estimada (señal perdida) u horaria
+function vivoNow(s) {
+  const now = Date.now(), to = LL[s.to], from = LL[s.from], tot = kmLL(from, to);
+  let lat, lon, ang, src, altf = 1, alt = null, gs = null;
+  const age = (now - LIVE.at) / 1000;
+  if (LIVE.cs === s.vivo && LIVE.ac && age < 600) {
+    const a = LIVE.ac, tr = (a.track || 0) * Math.PI / 180, dkm = age > 20 && a.gs ? a.gs * 1.852 * (age - 10) / 3600 : 0;   // extrapola si la señal se atrasó
+    lat = a.lat + dkm * Math.cos(tr) / 111.2; lon = a.lon + dkm * Math.sin(tr) / (111.2 * Math.cos(a.lat * Math.PI / 180));
+    ang = tr - Math.PI / 2; src = age < 60 ? "vivo" : "estimada"; alt = typeof a.alt === "number" ? a.alt : 0; gs = a.gs;
+    altf = Math.max(.15, Math.min(1, alt / 12000));
+  } else {
+    const t0 = s.desp || (st.t0 - st.base), t1 = s.lleg || t0 + s.min * 60000, u = Math.max(0, Math.min(1, (now - t0) / (t1 - t0)));
+    const q = arcAt(s.from, s.to, u); return { xy: [q.x, q.y], ang: q.ang, frac: u, src: "horario", altf: Math.min(1, u / .08, (1 - u) / .08), remain: tot * (1 - u), eta: t1 };
+  }
+  if (LIVE.landed) return { xy: CP[s.to], ang, frac: 1, src, altf: 0, remain: 0, alt: 0, gs: 0 };
+  const remain = kmLL([lat, lon], to);
+  return { xy: projLL(lat, lon), ang, frac: Math.max(0, Math.min(.999, 1 - remain / tot)), src, altf, remain, alt, gs };
+}
+function vivoCam(s) {
+  const v = vivoNow(s), [x, y] = v.xy, [lx, ly] = CP[s.to];
+  const x0 = Math.min(x, lx), x1 = Math.max(x, lx), y0 = Math.min(y, ly), y1 = Math.max(y, ly);
+  return { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, z: MW / Math.max(420, (x1 - x0) * 1.5 + 160, ((y1 - y0) * 1.5 + 160) * MW / MH) };
+}
 const nombreC = c => c === "ROMA" ? "Roma" : c === "BUENOS AIRES" ? "Buenos Aires" : tc(c);
 function dayHTML(di) {
   const d = DIAS[di];
@@ -621,6 +686,13 @@ function panelTick(S) {
     const el = body.querySelector(`.ev.leg[data-i="${s.ii}"]`); if (!el) return;
     const f = legFrac(), D = kmEntre(s.from, s.to), r = rate(), remain = r > 0 ? (legMs() - progMs()) / r : null;
     el.querySelector(".bar i").style.width = (f * 100).toFixed(1) + "%";
+    if (s.vivo && !arrived()) {
+      const v = vivoNow(s), n0 = x => String(Math.round(x)).replace(/\B(?=(\d{3})+(?!\d))/g, "\u202f");
+      const quien = v.src === "vivo" ? `<b>En vivo</b>${v.alt != null ? ` · ${n0(v.alt * .3048)} m de altitud` : ""}${v.gs ? ` · ${n0(v.gs * 1.852)} km/h` : ""}`
+        : v.src === "estimada" ? "Señal perdida · posición estimada" : "Posición estimada según el horario";
+      el.querySelector(".lx").innerHTML = `${quien}<br>Faltan ${n0(v.remain)} km para ${esc(nombreC(s.to))}` + (v.src !== "horario" ? `<span class="src"> · Datos: adsb.lol</span>` : "");
+      return;
+    }
     el.querySelector(".lx").innerHTML = arrived() ? `Aterrizó${!INTL.has(s.to) ? " en " + esc(nombreC(s.to)) : ""}` : (D ? `${Math.round(f * D)} de ${Math.round(D)} km · ` : "") + (remain != null && remain > 0 ? `aterrizaje aprox. ${hhmm(new Date(now + remain))}` : st.paused ? "en pausa" : "");
     return;
   }
@@ -737,6 +809,7 @@ function connectSync() {
   const q = new URLSearchParams(location.search), saved = load();
   if (q.has("paso")) { st.step = Math.max(0, Math.min(LAST, +q.get("paso"))); if (moving(STEPS[st.step])) { st.t0 = clock(); st.base = (+q.get("avance") || 0) * legMs(); } }
   else if (saved) st = saved;
+  if (RADAR) { const i = STEPS.findIndex(x => x.vivo); if (i >= 0) { st.step = i; st.t0 = clock(); st.base = 0; st.paused = false; livePoll(); } }   // abre directo en el vuelo en vivo
   enter(st.step, true);
   $("hspeed").textContent = "×" + String(st.speed).replace(".", ",");
   window.__ready = true;

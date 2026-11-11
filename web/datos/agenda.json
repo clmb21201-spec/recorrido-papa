@@ -24,7 +24,7 @@
  "velocidad_base": 30,
  "vuelo_seg": 5,
  "pausa_llegada_seg": 3,
- "nota": "velocidad_base: 30 = todo corre a ×30 (poner 1 para tiempo real). vuelo_seg: duración fija de cada vuelo en segundos (0 = usar los minutos de cada vuelo). Solo los recorridos confirmados tienen desplazamiento (w1, w2: llegada del 11; t1, t2: Ruta 4 del 12; c1: Cusco; m1, m2: lunes 16). Fuente: mapas oficiales de la Conferencia Episcopal (9 nov.). Pucallpa queda pendiente hasta el 13 nov. pausa_llegada_seg: segundos que se queda al llegar (aterrizaje o fin de recorrido) antes de pasar a la actividad siguiente. vel_pantalla_max: en la vista acelerada, velocidad máxima del vehículo en pantalla (metros por segundo); no afecta al tiempo real.",
+ "nota": "velocidad_base: 30 = todo corre a ×30 (poner 1 para tiempo real). vuelo_seg: duración fija de cada vuelo en segundos (0 = usar los minutos de cada vuelo). Solo los recorridos confirmados tienen desplazamiento (w1, w2: llegada del 11; t1, t2: Ruta 4 del 12; c1: Cusco; m1, m2: lunes 16). Fuente: mapas oficiales de la Conferencia Episcopal (9 nov.). Pucallpa queda pendiente hasta el 13 nov. pausa_llegada_seg: segundos que se queda al llegar (aterrizaje o fin de recorrido) antes de pasar a la actividad siguiente. vel_pantalla_max: en la vista acelerada, velocidad máxima del vehículo en pantalla (metros por segundo); no afecta al tiempo real. vivo: indicativo del vuelo para seguirlo en vivo en /radar/ (datos de adsb.lol); despegue/llegada: horario para estimar la posición si no hay señal.",
  "lugares": {
   "base_callao": {
    "nombre": "Grupo Aéreo N.º 8",
@@ -240,7 +240,10 @@
      "vuelo": true,
      "de": "BUENOS AIRES",
      "a": "LIMA",
-     "min": 330
+     "min": 330,
+     "vivo": "ARG1096",
+     "despegue": "2026-11-11T12:40:00-05:00",
+     "llegada": "2026-11-11T17:30:00-05:00"
     },
     {
      "hora": "5:30 p. m.",

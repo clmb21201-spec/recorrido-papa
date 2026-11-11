@@ -253,9 +253,11 @@ function planeDraw(pl) {
   const alt = pl.altf != null ? pl.altf : Math.min(1, pl.k / .12, (1 - pl.k) / .12);   // sube al despegar y baja al aterrizar (en vivo: según la altitud real)
   const kind = pl.heli ? "heli" : "avion";
   for (const n in VEH) { VEH[n].wrap.visible = VEH[n].sh.visible = n === kind; }
-  const yaw = NOSES[kind] - pl.ang, sc = .8 + (pl.heli ? .2 : .35) * alt;
+  // en /radar/ el avión va más chico y con la sombra pegada y tenue (si no, parecen dos aviones)
+  const yaw = NOSES[kind] - pl.ang, sc = (.8 + (pl.heli ? .2 : .35) * alt) * (RADAR ? .6 : 1), off = (RADAR ? 7 : 34) * alt;
   planeG.position.set(pl.x, 300, pl.y); planeYaw.rotation.y = yaw; planeTilt.rotation.x = -.42 * (.4 + .6 * alt); planeG.scale.setScalar(sc);
-  shadowG.position.set(pl.x + 34 * alt, 10, pl.y + 34 * alt); shadowG.rotation.y = yaw; shadowG.scale.setScalar(sc * .95);
+  shadowG.position.set(pl.x + off, 10, pl.y + off); shadowG.rotation.y = yaw; shadowG.scale.setScalar(sc * .95);
+  if (RADAR) shadowG.visible = false;   // en /radar/ sin sombra: a esta escala se veía como un segundo avión
   pRenderer.render(pScene, pCam);
 }
 
